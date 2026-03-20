@@ -269,7 +269,7 @@ def get_settings() -> Settings:
 
     google_sheets = GoogleSheetsSettings(
         sheet_id=_env("GOOGLE_SHEET_ID"),
-        tab_name=_env("GOOGLE_SHEET_TAB", "NICHES_INPUT"),
+        tab_name=_env("GOOGLE_SHEET_TAB", "CITIES_INPUT"),
         service_account_key_path=_env("GOOGLE_SA_KEY_FILE") or None,
         service_account_key_json=_env("GOOGLE_SA_KEY_JSON") or None,
     )

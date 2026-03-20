@@ -1,4 +1,4 @@
-"""Синхронизация Google Sheets → очередь запросов."""
+"""Синхронизация Google Sheets -> очередь запросов по городам."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 from sqlalchemy import text
 
-from app.modules.query_generator import GeneratedQuery, NicheRow, QueryGenerator
+from app.modules.query_generator import CityRow, GeneratedQuery, QueryGenerator
 from app.modules.utils.db import get_session_factory, session_scope
 
 LOGGER = logging.getLogger("app.sheet_sync")
@@ -214,7 +214,7 @@ class QueryRepository:
 
     def log_batch(
         self,
-        row: NicheRow,
+        row: CityRow,
         result: QueryInsertResult,
         status: str,
         error: Optional[str],
@@ -223,13 +223,13 @@ class QueryRepository:
             stmt = text(
                 """
                 INSERT INTO search_batch_logs (
-                    niche, city, country, batch_tag,
+                    city, country, batch_tag, entity_scope,
                     attempted_queries, inserted_queries, duplicate_queries,
                     scheduled_start, scheduled_end,
                     status, error
                 )
                 VALUES (
-                    :niche, :city, :country, :batch_tag,
+                    :city, :country, :batch_tag, :entity_scope,
                     :attempted, :inserted, :duplicates,
                     :first_scheduled, :last_scheduled,
                     :status, :error
@@ -237,10 +237,10 @@ class QueryRepository:
                 """
             )
             params = {
-                "niche": row.niche.strip(),
                 "city": row.city.strip() if row.city else None,
                 "country": row.country.strip() if row.country else None,
                 "batch_tag": row.batch_tag.strip() if row.batch_tag else None,
+                "entity_scope": self._build_entity_scope(row),
                 "attempted": result.attempted,
                 "inserted": result.inserted,
                 "duplicates": result.duplicates,
@@ -250,6 +250,15 @@ class QueryRepository:
                 "error": (error[:500] if error else None),
             }
             session.execute(stmt, params)
+
+    @staticmethod
+    def _build_entity_scope(row: CityRow) -> str:
+        scopes = []
+        if row.enabled_malls:
+            scopes.append("mall")
+        if row.enabled_agencies:
+            scopes.append("real_estate_agency")
+        return ",".join(scopes) or "none"
 
 
 class SheetSyncService:
@@ -271,8 +280,8 @@ class SheetSyncService:
         summary = SyncSummary(total_rows=len(rows))
 
         for row_data in rows:
-            niche = row_data.get("niche")
-            if not niche:
+            city = row_data.get("city")
+            if not city:
                 continue
             if batch_tag and row_data.get("batch_tag") != batch_tag:
                 continue
@@ -282,12 +291,13 @@ class SheetSyncService:
                 continue
 
             summary.processed_rows += 1
-            row = NicheRow(
+            row = CityRow(
                 row_index=row_data.row_index,
-                niche=niche,
-                city=row_data.get("city") or None,
+                city=city,
                 country=row_data.get("country") or None,
                 batch_tag=row_data.get("batch_tag") or None,
+                enabled_malls=self._parse_bool_cell(row_data.get("search_malls"), default=True),
+                enabled_agencies=self._parse_bool_cell(row_data.get("search_agencies"), default=True),
             )
 
             queries: List[GeneratedQuery] = []
@@ -331,6 +341,13 @@ class SheetSyncService:
         if updates:
             self.sheet_adapter.update_rows(updates)
         return summary
+
+    @staticmethod
+    def _parse_bool_cell(value: str, *, default: bool) -> bool:
+        cleaned = (value or "").strip().lower()
+        if not cleaned:
+            return default
+        return cleaned in {"1", "true", "yes", "y", "да", "x"}
 
 
 def build_service(settings) -> SheetSyncService:

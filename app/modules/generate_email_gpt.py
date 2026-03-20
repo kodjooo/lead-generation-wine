@@ -21,6 +21,7 @@ class CompanyBrief:
 
     name: str
     domain: str
+    entity_type: Optional[str] = None
     industry: Optional[str] = None
     highlights: List[str] = field(default_factory=list)
 
@@ -111,6 +112,7 @@ class EmailGenerator:
         contact: Optional[ContactBrief],
     ) -> Dict[str, object]:
         homepage_excerpt = " ".join(company.highlights) if company.highlights else None
+        segment_name = self._segment_name(company.entity_type)
         return {
             "model": self.model,
             "temperature": self.temperature,
@@ -124,6 +126,8 @@ class EmailGenerator:
                         "которым можно помочь автоматизацией процессов с помощью нейросетей, Python, make.com или n8n. "
                         "Избегай рекламного тона и превосходных степеней. Делай акцент на пользе: экономия времени, "
                         "сокращение затрат, устранение рутины, повышение эффективности. Всегда используй JSON-ответ с полями subject и body. "
+                        "Есть две основные аудитории: торговые центры и агентства недвижимости. "
+                        "Подбирай наблюдения и примеры автоматизации под конкретный тип компании. "
                         "Структура письма фиксирована: тема передаёт идею оптимизации процессов компании (например, 'Идея по оптимизации процессов вашей компании') и тело состоит из блоков:\n"
                         "1) Приветствие 'Добрый день!'.\n"
                         "2) Короткое представление Марка и его подхода (нейросети, Python).\n"
@@ -139,6 +143,8 @@ class EmailGenerator:
                     "content": json.dumps(
                         {
                             "company": {
+                                "entity_type": company.entity_type,
+                                "segment_name": segment_name,
                                 "homepage_excerpt": homepage_excerpt,
                             },
                             "guidelines": {
@@ -186,32 +192,42 @@ class EmailGenerator:
         contact: Optional[ContactBrief],
     ) -> EmailTemplate:
         subject = "Идея по оптимизации процессов вашей компании"
-        industry_fragment = company.industry or "вашей сфере"
-        if offer.value_proposition:
-            automation_example = offer.value_proposition.lower()
+        segment_name = self._segment_name(company.entity_type)
+        if company.entity_type == "mall":
             process_hint = (
-                f"например, {automation_example}, чтобы команда меньше тратила времени на рутину"
+                "например, автоматизировать обработку заявок на аренду, входящих обращений арендаторов "
+                "и подготовку сводок по заполняемости, чтобы команда меньше тратила времени на рутину"
             )
-        elif offer.pains:
-            pain_focus = offer.pains[0].lower()
+            observation = "Сайт производит впечатление площадки с большим числом параллельных коммуникаций и процессов."
+        elif company.entity_type == "real_estate_agency":
             process_hint = (
-                f"например, автоматизировать части процесса вокруг {pain_focus}, "
-                "чтобы команда меньше тратила времени на рутину"
+                "например, автоматизировать первичный разбор входящих заявок, маршрутизацию лидов "
+                "и подготовку клиентских подборок, чтобы команда меньше тратила времени на рутину"
             )
+            observation = "По сайту видно, что у вас много однотипных коммуникаций, где автоматизация может быстро окупиться."
         else:
-            process_hint = (
-                "например, автоматизировать обработку заявок или подготовку отчётов, "
-                "чтобы команда меньше тратила времени на рутину"
-            )
-        observation = (
-            "Обратил внимание, как вы последовательно развиваете проекты — глаз зацепился за кейсы на главной."
-            if not offer.pains
-            else "Понравилось, что вы так системно подходите к своим задачам — это редко встретишь."
-        )
+            industry_fragment = company.industry or "вашей сфере"
+            if offer.value_proposition:
+                automation_example = offer.value_proposition.lower()
+                process_hint = (
+                    f"например, {automation_example}, чтобы команда меньше тратила времени на рутину"
+                )
+            elif offer.pains:
+                pain_focus = offer.pains[0].lower()
+                process_hint = (
+                    f"например, автоматизировать части процесса вокруг {pain_focus}, "
+                    "чтобы команда меньше тратила времени на рутину"
+                )
+            else:
+                process_hint = (
+                    "например, автоматизировать обработку заявок или подготовку отчётов, "
+                    "чтобы команда меньше тратила времени на рутину"
+                )
+            observation = f"По сайту видно, что вы системно развиваете процессы в сфере {industry_fragment}."
         body_lines = [
             "Добрый день!",
             "Меня зовут Марк, я занимаюсь автоматизацией бизнес-процессов с помощью нейросетей и Python.",
-            f"Посмотрел ваш сайт — по описанию видно, что вы работаете в сфере {industry_fragment}.",
+            f"Посмотрел ваш сайт — по описанию видно, что вы работаете как {segment_name}.",
             observation,
             f"Мне кажется, здесь можно упростить процессы, {process_hint}.",
             "",
@@ -223,6 +239,14 @@ class EmailGenerator:
         ]
         body = "\n".join(body_lines)
         return EmailTemplate(subject=subject, body=body)
+
+    @staticmethod
+    def _segment_name(entity_type: Optional[str]) -> str:
+        if entity_type == "mall":
+            return "торговый центр"
+        if entity_type == "real_estate_agency":
+            return "агентство недвижимости"
+        return "компания"
 
     def _response_schema(self) -> Dict[str, object]:
         return {

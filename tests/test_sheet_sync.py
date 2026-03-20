@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from app.modules.query_generator import NicheRow, QueryGenerator
+from app.modules.query_generator import QueryGenerator
 from app.modules.sheet_sync import (
     QueryInsertResult,
     QueryRepository,
@@ -24,13 +24,14 @@ class FakeSheetAdapter(SheetAdapter):
                     "city": "Москва",
                     "country": "Россия",
                     "batch_tag": "batch-1",
+                    "search_malls": "yes",
+                    "search_agencies": "yes",
                     "status": "",
                 },
             ),
             SheetRowData(
                 row_index=3,
                 values={
-                    "niche": "логистика",
                     "city": "",
                     "country": "Россия",
                     "batch_tag": "batch-2",
@@ -84,5 +85,6 @@ def test_sheet_sync_updates_statuses() -> None:
     update = adapter.updated[0]
     assert update.status == "done"
     assert update.generated_count == len(repository.inserted_batches[0])
+    assert update.generated_count == 4
     assert update.last_error is None
     assert repository.logged[0][2] == "done"

@@ -1,4 +1,4 @@
-"""CLI для синхронизации Google Sheets с очередью запросов."""
+"""CLI для синхронизации Google Sheets с очередью запросов по городам."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from app.modules.sheet_sync import build_service
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Синхронизирует лист NICHES_INPUT с БД.")
+    parser = argparse.ArgumentParser(description="Синхронизирует лист городов с БД.")
     parser.add_argument(
         "--batch-tag",
         help="Обработать только строки с указанным batch_tag",

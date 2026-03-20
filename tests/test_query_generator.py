@@ -1,32 +1,39 @@
-"""Тесты генератора запросов."""
+"""Тесты генератора запросов по городам."""
 
 from datetime import datetime, timezone
 
-from app.modules.query_generator import NicheRow, QueryGenerator
+from app.modules.query_generator import CityRow, QueryGenerator
 
 
-def test_query_generator_builds_queries_with_triggers() -> None:
+def test_query_generator_builds_queries_for_two_entity_types() -> None:
     generator = QueryGenerator(now_func=lambda: datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc))
-    row = NicheRow(row_index=2, niche="стоматология", city="Москва", country="Россия", batch_tag="batch-1")
+    row = CityRow(row_index=2, city="Москва", country="Россия", batch_tag="batch-1")
 
     queries = generator.generate(row)
 
-    assert len(queries) == 1
+    assert len(queries) == 4
+    assert queries[0].query_text == "Москва торговый центр официальный сайт"
+    assert queries[0].metadata["entity_type"] == "mall"
+    assert queries[2].metadata["entity_type"] == "real_estate_agency"
+    assert queries[0].region_code == 213
+    assert queries[0].scheduled_for == datetime(2025, 1, 1, 21, 0, tzinfo=timezone.utc)
+    assert queries[1].scheduled_for == datetime(2025, 1, 1, 21, 0, 45, tzinfo=timezone.utc)
 
-    first_query = queries[0]
-    assert first_query.metadata["trigger"] is None
-    assert first_query.query_text == "стоматология Москва"
-    assert first_query.region_code == 213
-    assert first_query.scheduled_for == datetime(2025, 1, 1, 21, 0, tzinfo=timezone.utc)
 
-
-def test_query_generator_fallback_region() -> None:
+def test_query_generator_fallback_region_and_flags() -> None:
     generator = QueryGenerator(now_func=lambda: datetime(2025, 1, 2, 3, 0, tzinfo=timezone.utc))
-    row = NicheRow(row_index=3, niche="грузоперевозки", city="Неизвестный город", country="Казахстан", batch_tag=None)
+    row = CityRow(
+        row_index=3,
+        city="Неизвестный город",
+        country="Казахстан",
+        batch_tag=None,
+        enabled_malls=False,
+        enabled_agencies=True,
+    )
 
     queries = generator.generate(row)
 
-    assert queries
-    assert queries[0].region_code == 225  # fallback
-    # так как вызываем ночью, расписание начинается немедленно
+    assert len(queries) == 2
+    assert all(query.metadata["entity_type"] == "real_estate_agency" for query in queries)
+    assert queries[0].region_code == 225
     assert queries[0].scheduled_for == datetime(2025, 1, 2, 3, 0, tzinfo=timezone.utc)

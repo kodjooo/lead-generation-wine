@@ -99,7 +99,7 @@ def test_email_generator_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OPENAI_API_KEY", "")
 
     generator = EmailGenerator()
-    company = CompanyBrief(name="Test", domain="test.ru")
+    company = CompanyBrief(name="Test", domain="test.ru", entity_type="mall")
     offer = OfferBrief(pains=["Долгий поиск лидов"], value_proposition="Автоматизируем холодный аутрич")
 
     generated = generator.generate(company, offer)
@@ -107,6 +107,7 @@ def test_email_generator_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     assert generated.used_fallback is True
     assert generated.request_payload is None
     assert "Марк" in generated.template.body
+    assert "торговый центр" in generated.template.body
     assert generated.request_payload is None
 
     reset_settings_cache()
@@ -131,7 +132,7 @@ def test_email_generator_calls_openai(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
     generator = EmailGenerator()
-    company = CompanyBrief(name="Alpha", domain="alpha.ru", industry="Маркетинг")
+    company = CompanyBrief(name="Alpha", domain="alpha.ru", entity_type="real_estate_agency", industry="Маркетинг")
     offer = OfferBrief(pains=["Нужны лиды"], value_proposition="Запустим кампанию за 7 дней")
 
     generated = generator.generate(company, offer)

@@ -134,6 +134,7 @@ ORDER BY lc.first_seen_at;
 
 SELECT_SERP_QUERY_DETAILS_SQL = """
 SELECT query_text, region_code
+     , metadata
 FROM serp_queries
 WHERE id = :query_id;
 """
@@ -189,11 +190,6 @@ class PipelineOrchestrator:
         self.contact_enricher = ContactEnricher(session_factory=self.session_factory)
         self.email_generator = EmailGenerator()
         self.email_sender = EmailSender(session_factory=self.session_factory)
-        self.offer = OfferBrief(
-            pains=["Расширение воронки B2B", "Высокая стоимость лида"],
-            value_proposition="Автоматизируем поиск релевантных компаний и персонализируем писма в течение суток.",
-            call_to_action="Готовы обсудить 15-минутный пилот на этой неделе?",
-        )
         self._token_provider = token_provider
         self.sheet_settings = settings.sheet_sync
         self._sheet_service = None
@@ -394,10 +390,22 @@ class PipelineOrchestrator:
             LOGGER.error("Не удалось декодировать ответ операции %s: %s", operation.id, exc)
             return
 
+        query_row = session.execute(
+            text(SELECT_SERP_QUERY_DETAILS_SQL),
+            {"query_id": query_id},
+        ).mappings().one_or_none()
+        metadata = query_row["metadata"] if query_row else {}
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except json.JSONDecodeError:
+                metadata = {}
+
         self.serp_ingest.ingest(
             operation_db_id,
             raw_xml,
             yandex_operation_id=operation.id,
+            query_metadata=metadata if isinstance(metadata, dict) else {},
         )
         session.execute(
             text(UPDATE_QUERY_STATUS_SQL),
@@ -445,11 +453,16 @@ class PipelineOrchestrator:
                 company = CompanyBrief(
                     name=row["name"],
                     domain=row["canonical_domain"] or row["value"].split("@")[-1],
+                    entity_type=row["industry"],
                     industry=row["industry"],
                     highlights=[row["homepage_excerpt"]] if row["homepage_excerpt"] else [],
                 )
                 contact = ContactBrief(emails=[row["value"]])
-                generated = self.email_generator.generate(company, self.offer, contact)
+                generated = self.email_generator.generate(
+                    company,
+                    self._build_offer(company.entity_type),
+                    contact,
+                )
                 self.email_sender.queue(
                     company_id=row["company_id"],
                     contact_id=row["contact_id"],
@@ -460,6 +473,38 @@ class PipelineOrchestrator:
                 )
                 queued += 1
             return queued
+
+    @staticmethod
+    def _build_offer(entity_type: str | None) -> OfferBrief:
+        if entity_type == "mall":
+            return OfferBrief(
+                pains=[
+                    "Много ручной обработки обращений арендаторов",
+                    "Сложно быстро готовить ответы по аренде и размещению",
+                ],
+                value_proposition=(
+                    "Автоматизируем входящие обращения, обработку запросов по аренде "
+                    "и подготовку внутренних сводок для коммерческой команды"
+                ),
+                call_to_action="Если интересно, покажу 2-3 прикладных сценария для торговых центров.",
+            )
+        if entity_type == "real_estate_agency":
+            return OfferBrief(
+                pains=[
+                    "Лиды долго распределяются вручную",
+                    "Менеджеры тратят много времени на однотипные ответы и квалификацию",
+                ],
+                value_proposition=(
+                    "Автоматизируем разбор входящих заявок, квалификацию лидов "
+                    "и подготовку первичных подборок для клиентов"
+                ),
+                call_to_action="Если интересно, покажу, как это можно быстро внедрить без большой разработки.",
+            )
+        return OfferBrief(
+            pains=["Высокая доля ручных операций"],
+            value_proposition="Автоматизируем повторяемые процессы и первичные коммуникации.",
+            call_to_action="Если тема актуальна, могу прислать несколько конкретных примеров.",
+        )
 
     def _send_scheduled_emails(self) -> int:
         if not getattr(self.email_sender, "sending_enabled", True):

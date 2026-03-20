@@ -118,3 +118,12 @@
 - Доработать `app/modules/send_email.py` для выбора канала (yandex/gmail), логирования, записи `metadata.mx` / `metadata.route` и фолбэка при ошибках.  
 - Добавить зависимости (dnspython>=2.6), unit-тесты `tests/test_mx_router.py`, `tests/test_send_email_routing.py` и обеспечить покрытие кейсов таймаута, force-доменов, фолбэка.  
 - Описать изменения в `docs/architecture.md` (путь письма, MX-роутер), актуализировать тестовые сценарии в `tests` и предусмотреть ручной чек-лист отправки 5–10 писем.
+
+Этап 16. Переписывание под городской pipeline ТЦ и агентств недвижимости  
+Статус: выполнено  
+Задачи:  
+- Перевести входной слой Google Sheets с `niche/city/country` на список городов с флагами `search_malls` и `search_agencies`.  
+- Переписать `app/modules/query_generator.py`, чтобы он строил фиксированные Yandex deferred запросы по каждому городу для двух типов организаций и сохранял тип запроса в `serp_queries.metadata`.  
+- Переписать `app/modules/serp_ingest.py`, чтобы он жёстко фильтровал агрегаторы и нерелевантные результаты, а также сохранял тип сущности (`mall` / `real_estate_agency`) и city-контекст в БД.  
+- Переписать `app/modules/enrich_contacts.py` и `app/modules/generate_email_gpt.py` под новый pipeline: улучшить поиск email на сайте и разделить генерацию писем на 2 ветки.  
+- Обновить `app/orchestrator.py`, миграции, `README.md`, `docs/architecture.md`, `docs/requirements.md`, `.env`, `.env.example` и тесты.

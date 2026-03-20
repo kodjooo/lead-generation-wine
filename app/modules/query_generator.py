@@ -1,12 +1,12 @@
-"""Генерация поисковых запросов и расписания для очереди SERP."""
+"""Генерация поисковых запросов по списку городов и типам организаций."""
 
 from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta, timezone
+from typing import Callable, List, Optional
 from zoneinfo import ZoneInfo
-from typing import List, Optional
 
 from app.modules.constants import EXCLUDED_DOMAINS
 
@@ -15,8 +15,29 @@ DEFAULT_CONFIG = {
     "night_window": {"start_local": "00:00", "end_local": "07:59", "timezone": "Europe/Moscow"},
     "spacing_seconds": 45,
     "region_fallback_lr": 225,
-    "max_queries_per_niche": 1,
     "excluded_domains": sorted(EXCLUDED_DOMAINS),
+    "entity_queries": {
+        "mall": [
+            {
+                "query": "{city} торговый центр официальный сайт",
+                "trigger": "shopping_mall_official_site",
+            },
+            {
+                "query": "{city} трц официальный сайт",
+                "trigger": "shopping_mall_trc_official_site",
+            },
+        ],
+        "real_estate_agency": [
+            {
+                "query": "{city} агентство недвижимости официальный сайт",
+                "trigger": "real_estate_agency_official_site",
+            },
+            {
+                "query": "{city} риэлторское агентство официальный сайт",
+                "trigger": "real_estate_agency_realtor_official_site",
+            },
+        ],
+    },
     "regions_lr": {
         "россия": 225,
         "москва и московская область": 1,
@@ -24,160 +45,115 @@ DEFAULT_CONFIG = {
         "санкт‑петербург": 2,
         "saint petersburg": 2,
         "архангельск": 20,
-        "nazran": 1092,
         "назрань": 1092,
         "астрахань": 37,
-        "nalchik": 30,
         "нальчик": 30,
-        "barnaul": 197,
         "барнаул": 197,
         "нижний новгород": 47,
-        "belgorod": 4,
         "белгород": 4,
         "новосибирск": 65,
-        "blagoveshchensk": 77,
         "благовещенск": 77,
         "омск": 66,
-        "bryansk": 191,
         "брянск": 191,
         "орёл": 10,
         "орел": 10,
-        "veliky novgorod": 24,
         "великий новгород": 24,
         "оренбург": 48,
         "владивосток": 75,
-        "penza": 49,
         "пенза": 49,
         "владикавказ": 33,
-        "perm": 50,
         "пермь": 50,
-        "vladimir": 192,
         "владимир": 192,
         "псков": 25,
         "волгоград": 38,
-        "rostov-on-don": 39,
         "ростов-на-дону": 39,
         "вологда": 21,
-        "ryazan": 11,
         "рязань": 11,
-        "voronezh": 193,
         "воронеж": 193,
-        "samara": 51,
         "самара": 51,
-        "grozny": 1106,
         "грозный": 1106,
-        "yekaterinburg": 54,
         "екатеринбург": 54,
-        "saransk": 42,
         "саранск": 42,
-        "ivanovo": 5,
         "иваново": 5,
-        "smolensk": 12,
         "смоленск": 12,
-        "irkutsk": 63,
-        "irkutsk oblast": 63,
-        "irkutskaya oblast": 63,
         "иркутск": 63,
         "сочи": 239,
-        "yoshkar-ola": 41,
         "йошкар-ола": 41,
-        "stavropol": 36,
         "ставрополь": 36,
-        "kazan": 43,
         "казань": 43,
-        "surgut": 973,
         "сургут": 973,
-        "kaliningrad": 22,
         "калининград": 22,
-        "tambov": 13,
         "тамбов": 13,
-        "kemerovo": 64,
         "кемерово": 64,
-        "tver": 14,
         "тверь": 14,
-        "kostroma": 7,
         "кострома": 7,
-        "tomsk": 67,
         "томск": 67,
-        "krasnodar": 35,
         "краснодар": 35,
-        "tula": 15,
         "тула": 15,
-        "krasnoyarsk": 62,
         "красноярск": 62,
-        "ulyanovsk": 195,
         "ульяновск": 195,
-        "kurgan": 53,
         "курган": 53,
-        "ufa": 172,
         "уфа": 172,
-        "kursk": 8,
         "курск": 8,
-        "khabarovsk": 76,
         "хабаровск": 76,
-        "lipetsk": 9,
         "липецк": 9,
-        "cheboksary": 45,
         "чебоксары": 45,
-        "makhachkala": 28,
         "махачкала": 28,
-        "chelyabinsk": 56,
         "челябинск": 56,
-        "cherkessk": 1104,
         "черкесск": 1104,
-        "yaroslavl": 16,
         "ярославль": 16,
-        "murmansk": 23,
         "мурманск": 23,
     },
 }
 
 
 @dataclass
-class NicheRow:
+class CityRow:
     """Исходные данные строки Google Sheets."""
 
     row_index: int
-    niche: str
-    city: Optional[str]
+    city: str
     country: Optional[str]
     batch_tag: Optional[str]
+    enabled_malls: bool = True
+    enabled_agencies: bool = True
 
 
 @dataclass
 class GeneratedQuery:
-    """Результат генерации одного запроса."""
+    """Результат генерации одного поискового запроса."""
 
     query_text: str
     query_hash: str
     region_code: int
     scheduled_for: datetime
-    trigger: Optional[str]
+    trigger: str
     metadata: dict
 
 
 class QueryGenerator:
-    """Формирует поисковые запросы и расписание запуска."""
+    """Формирует поисковые запросы для ТЦ и агентств недвижимости."""
 
     def __init__(
         self,
         config: dict | None = None,
         *,
-        now_func: callable = lambda: datetime.now(timezone.utc),
+        now_func: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
     ) -> None:
         self.config = config or DEFAULT_CONFIG
         self._now_func = now_func
         self._spacing = int(self.config.get("spacing_seconds", 45))
-        self._max_queries = int(self.config.get("max_queries_per_niche", 1))
         self._language = self.config.get("language", "ru")
         night_cfg = self.config.get("night_window", {})
         self._night_tz = ZoneInfo(night_cfg.get("timezone", "UTC"))
         self._window_start_local = self._parse_time(night_cfg.get("start_local", "00:00"))
         self._window_end_local = self._parse_time(night_cfg.get("end_local", "07:59"))
         self._regions_map = {
-            self._normalize_key(k): v for k, v in self.config.get("regions_lr", {}).items()
+            self._normalize_key(key): value for key, value in self.config.get("regions_lr", {}).items()
         }
         self._region_fallback = int(self.config.get("region_fallback_lr", 225))
+        self._entity_queries = self.config.get("entity_queries", {})
+        self._excluded_domains = tuple(sorted(self.config.get("excluded_domains", [])))
 
     @staticmethod
     def _parse_time(value: str) -> time:
@@ -196,24 +172,6 @@ class QueryGenerator:
         if country_key and country_key in self._regions_map:
             return self._regions_map[country_key]
         return self._region_fallback
-
-    def _place_fragment(self, row: NicheRow) -> str:
-        if row.city:
-            return row.city.strip()
-        if row.country:
-            return row.country.strip()
-        return ""
-
-    def _build_queries_texts(self, row: NicheRow) -> List[tuple[str, Optional[str]]]:
-        base_tokens = [row.niche.strip()]
-        place = self._place_fragment(row)
-        if place:
-            base_tokens.append(place)
-
-        queries: List[tuple[str, Optional[str]]] = []
-        base_query = " ".join(base_tokens)
-        queries.append((base_query, None))
-        return queries
 
     def _window_bounds(self, reference_date) -> tuple[datetime, timedelta]:
         start_local = datetime.combine(reference_date, self._window_start_local, self._night_tz)
@@ -241,40 +199,62 @@ class QueryGenerator:
         end_next = start_next + duration
         return start_next, end_next
 
-    def generate(self, row: NicheRow) -> List[GeneratedQuery]:
+    def _build_queries(self, row: CityRow) -> List[tuple[str, str, str]]:
+        queries: List[tuple[str, str, str]] = []
+        city = row.city.strip()
+        if not city:
+            return queries
+
+        if row.enabled_malls:
+            for item in self._entity_queries.get("mall", []):
+                queries.append((item["query"].format(city=city), item["trigger"], "mall"))
+        if row.enabled_agencies:
+            for item in self._entity_queries.get("real_estate_agency", []):
+                queries.append(
+                    (
+                        item["query"].format(city=city),
+                        item["trigger"],
+                        "real_estate_agency",
+                    )
+                )
+        return queries
+
+    def generate(self, row: CityRow) -> List[GeneratedQuery]:
         """Формирует список запросов для строки листа."""
-        queries_with_triggers = self._build_queries_texts(row)
+        queries = self._build_queries(row)
+        if not queries:
+            return []
+
         now = self._now_func()
         window_start, window_end = self._next_window_start(now)
-        scheduled_times: List[datetime] = []
-        for index, _ in enumerate(queries_with_triggers):
-            scheduled = window_start + timedelta(seconds=self._spacing * index)
-            if scheduled > window_end:
-                break
-            scheduled_times.append(scheduled)
+        region_code = self._resolve_region(row.city, row.country)
 
         result: List[GeneratedQuery] = []
-        region_code = self._resolve_region(row.city, row.country)
-        metadata_base = {
-            "niche": row.niche.strip(),
-            "city": row.city.strip() if row.city else None,
-            "country": row.country.strip() if row.country else None,
-            "batch_tag": row.batch_tag.strip() if row.batch_tag else None,
-            "language": self._language,
-            "selection": "balanced",
-        }
-
-        for schedule_time, (query_text, trigger) in zip(scheduled_times, queries_with_triggers):
-            cleaned = " ".join(query_text.split())
-            query_hash = hashlib.sha1(f"{cleaned}|{region_code}".encode("utf-8"), usedforsecurity=False).hexdigest()
-            metadata = dict(metadata_base)
-            metadata["trigger"] = trigger
+        for index, (query_text, trigger, entity_type) in enumerate(queries):
+            scheduled_for = window_start + timedelta(seconds=self._spacing * index)
+            if scheduled_for > window_end:
+                break
+            cleaned_query = " ".join(query_text.split())
+            query_hash = hashlib.sha1(
+                f"{cleaned_query}|{region_code}".encode("utf-8"),
+                usedforsecurity=False,
+            ).hexdigest()
+            metadata = {
+                "city": row.city.strip(),
+                "country": row.country.strip() if row.country else None,
+                "batch_tag": row.batch_tag.strip() if row.batch_tag else None,
+                "language": self._language,
+                "selection": "strict",
+                "entity_type": entity_type,
+                "trigger": trigger,
+                "excluded_domains": list(self._excluded_domains),
+            }
             result.append(
                 GeneratedQuery(
-                    query_text=cleaned,
+                    query_text=cleaned_query,
                     query_hash=query_hash,
                     region_code=region_code,
-                    scheduled_for=schedule_time,
+                    scheduled_for=scheduled_for,
                     trigger=trigger,
                     metadata=metadata,
                 )

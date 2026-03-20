@@ -16,9 +16,9 @@ SAMPLE_XML = """
       <doc>
         <url>https://example.com/products</url>
         <domain>example.com</domain>
-        <title>Example Company</title>
+        <title>Example Mall официальный сайт</title>
         <passages>
-          <passage>Лучшее решение для бизнеса</passage>
+          <passage>Торгово-развлекательный центр в Москве</passage>
         </passages>
         <properties>
           <property name="lang">ru</property>
@@ -28,9 +28,9 @@ SAMPLE_XML = """
     <group>
       <doc>
         <url>beta.ru</url>
-        <title>Beta LLC</title>
+        <title>Beta недвижимость официальный сайт</title>
         <passages>
-          <passage>Агентство полного цикла</passage>
+          <passage>Агентство недвижимости полного цикла</passage>
         </passages>
       </doc>
     </group>
@@ -119,21 +119,19 @@ def test_serp_ingest_persists_results_and_companies() -> None:
             "11111111-1111-1111-1111-111111111111",
             SAMPLE_XML,
             yandex_operation_id="op-123",
+            query_metadata={"entity_type": "mall", "city": "Москва"},
         )
 
-    assert len(inserted) == 2
+    assert len(inserted) == 1
     assert inserted[0] == "id-1"
-    assert inserted[1] == "id-3"
     assert session.committed is True
     assert session.closed is True
-    assert len(session.calls) == 4
+    assert len(session.calls) == 2
 
     first_stmt_text = session.calls[0][0].text
     second_stmt_text = session.calls[1][0].text
-    third_stmt_text = session.calls[2][0].text
     assert "INSERT INTO serp_results" in first_stmt_text
     assert "INSERT INTO companies" in second_stmt_text
-    assert "INSERT INTO serp_results" in third_stmt_text
 
     params_result = session.calls[0][1]
     assert params_result["domain"] == "example.com"
@@ -144,6 +142,7 @@ def test_serp_ingest_persists_results_and_companies() -> None:
     params_company = session.calls[1][1]
     assert params_company["domain"] == "example.com"
     assert params_company["website_url"].startswith("https://example.com")
+    assert params_company["industry"] == "mall"
 
 
 def test_serp_ingest_skips_excluded_domains() -> None:

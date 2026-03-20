@@ -74,6 +74,23 @@ def test_extract_contacts_skips_invalid_mailto() -> None:
     assert contacts == []
 
 
+def test_extract_contacts_finds_text_email() -> None:
+    enricher = ContactEnricher(session_factory=lambda: None)  # type: ignore[arg-type]
+    html = """
+    <html>
+      <body>
+        <p>Для связи пишите на mall@example.com</p>
+      </body>
+    </html>
+    """
+
+    contacts = list(enricher._extract_contacts_from_html(html, "https://example.com"))
+
+    assert len(contacts) == 1
+    assert contacts[0].value == "mall@example.com"
+    assert contacts[0].quality_score == 0.8
+
+
 @respx.mock
 def test_enrich_company_persists_contacts() -> None:
     session = DummySession()
@@ -131,7 +148,7 @@ def test_enrich_company_marks_not_found() -> None:
             )
         )
 
-    for suffix in ["contact", "contacts", "about", "about-us", "kontakty"]:
+    for suffix in ["contact", "contacts", "contact-us", "about", "about-us", "kontakty", "contacts/", "kontakty/", "arenda", "leasing", "rent"]:
         respx.get(f"https://empty.com/{suffix}").mock(return_value=httpx.Response(404, text="not found"))
 
     inserted = enricher.enrich_company("company-2", "empty.com", session=session)

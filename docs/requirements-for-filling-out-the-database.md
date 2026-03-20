@@ -1,6 +1,19 @@
-АЛГОРИТМ СКРИПТА: от минимального ввода (ниша/город) → пачка главных страниц компаний
+АЛГОРИТМ СКРИПТА: от списка городов → пачка главных страниц сайтов торговых центров и агентств недвижимости
 
 Версия: 1.0  |  Дата: 2025‑10‑18
+
+Актуализация от 2026-03-20
+──────────────────────────────────────────────────────────────────────────────
+Текущий pipeline больше не использует `niche` как обязательное поле. Входной лист должен содержать города и флаги типов поиска:
+• `city` — обязательно
+• `country` — опционально
+• `batch_tag` — опционально
+• `search_malls` — опционально, по умолчанию TRUE
+• `search_agencies` — опционально, по умолчанию TRUE
+
+Для каждой строки формируются стабильные поисковые запросы для двух типов сущностей:
+• `mall`
+• `real_estate_agency`
 
 Цель
 ──────────────────────────────────────────────────────────────────────────────
@@ -11,11 +24,12 @@
 
 Google‑таблица (минимальный ввод)
 ──────────────────────────────────────────────────────────────────────────────
-Лист: NICHES_INPUT
-• niche        — ОБЯЗАТЕЛЬНО (пример: “стоматология”, “грузоперевозки”).
-• city        — опционально (пример: “Москва”). Если пусто — используем страну.
-• country     — опционально (пример: “Россия”). Нужна, если city пусто.
+Лист: CITIES_INPUT
+• city        — ОБЯЗАТЕЛЬНО (пример: “Москва”).
+• country     — опционально (пример: “Россия”).
 • batch_tag   — опционально (произвольная метка партии).
+• search_malls — опционально (TRUE/FALSE).
+• search_agencies — опционально (TRUE/FALSE).
 
 Служебные поля, которые скрипт сам заполнит в этом же листе:
 • status, generated_count, db_inserted_count, db_duplicate_count,
@@ -27,7 +41,7 @@ Google‑таблица (минимальный ввод)
 id | query_text | query_hash | region_code | is_night_window | status | scheduled_for | created_at | updated_at | last_error | metadata
 
 Заполнение полей:
-• query_text      — «lang:ru» + niche + (опц. place) + “триггер” + минус‑домены.
+• query_text      — стабильный запрос вида «<город> торговый центр официальный сайт» или «<город> агентство недвижимости официальный сайт».
 • query_hash      — SHA1(query_text + '|' + region_code).
 • region_code     — код lr (город → страна → 225 по умолчанию).
 • is_night_window — TRUE.
@@ -35,7 +49,7 @@ id | query_text | query_hash | region_code | is_night_window | status | schedule
 • scheduled_for   — равномерно распределить внутри ближайшего ночного окна (UTC).
 • created_at/updated_at — NOW(UTC).
 • last_error      — NULL.
-• metadata        — JSON: {niche, city, country, trigger, batch_tag, language, selection: "strict|balanced"}.
+• metadata        — JSON: {city, country, entity_type, trigger, batch_tag, language, selection: "strict"}.
 
 Параметры генерации запросов (минимум шума, без файлов)
 ──────────────────────────────────────────────────────────────────────────────
@@ -49,12 +63,10 @@ id | query_text | query_hash | region_code | is_night_window | status | schedule
 
 Построение query_text
 ──────────────────────────────────────────────────────────────────────────────
-Формула:  query_text = "lang:ru " + niche + (" " + place? "") + (" " + trigger? "") + " " + negatives
-• place = city, если указали; иначе country; иначе пусто (регион задаём кодом lr).
-• trigger — берём по одному из списка (каждый — отдельный запрос).
-• negatives — конкатенация "-site:<домен>" для списка шумных доменов.
-• Не используем OR в одном запросе; каждый вариант — отдельная строка в очереди.
-• Следим за длиной ≤ 400 символов (если больше — обрезать часть минус‑доменов).
+Формула: query_text = "<city> <entity query pattern>"
+• entity query pattern — один из фиксированных шаблонов для `mall` или `real_estate_agency`.
+• Минус-домены не добавляем в query_text; они отфильтровываются на ingest.
+• Каждый шаблон — отдельная строка в очереди.
 
 Ночное планирование
 ──────────────────────────────────────────────────────────────────────────────
@@ -66,10 +78,10 @@ id | query_text | query_hash | region_code | is_night_window | status | schedule
 Воркфлоу по шагам
 ──────────────────────────────────────────────────────────────────────────────
 Шаг A. Загрузка ввода из Google Sheets
-  1) Читать NICHES_INPUT со статусом пусто/NEW.
-  2) Нормализовать niche/city/country; определить lr:
+  1) Читать CITIES_INPUT со статусом пусто/NEW.
+  2) Нормализовать city/country; определить lr:
      city→lr  |  иначе country→lr  |  иначе 225.
-  3) Для каждой строки построить 4–6 запросов (см. триггеры) и записать в search_queue:
+  3) Для каждой строки построить 2–4 запроса по включённым типам поиска и записать в search_queue:
      UPSERT по query_hash (ON CONFLICT DO NOTHING).
   4) Обновить в листе counters: generated_count/inserted/duplicates, status=EXPORTED, либо FAILED и last_error.
 
@@ -105,14 +117,12 @@ id | query_text | query_hash | region_code | is_night_window | status | schedule
 
 Псевдокод (упрощённый)
 ──────────────────────────────────────────────────────────────────────────────
-for row in sheets.NICHES_INPUT where status in ('', 'NEW'):
+for row in sheets.CITIES_INPUT where status in ('', 'NEW'):
     lr = resolve_lr(row.city, row.country, fallback=225)
-    expansions = ["", '"оставить заявку"', '"онлайн запись"', '"рассчитать стоимость"', '"коммерческое предложение"', '"бриф"'][:6]
-    for exp in expansions:
-        qtext = build_query("lang:ru", row.niche, row.city or row.country, exp, NEG_SITES)
-        h = sha1(qtext + '|' + str(lr))
+    for query in build_city_queries(row.city, malls=row.search_malls, agencies=row.search_agencies):
+        h = sha1(query.text + '|' + str(lr))
         sf = next_night_slot()
-        upsert(search_queue, {query_text:qtext, query_hash:h, region_code:lr, is_night_window:true, status:'pending', scheduled_for:sf, metadata:{...}})
+        upsert(search_queue, {query_text:query.text, query_hash:h, region_code:lr, is_night_window:true, status:'pending', scheduled_for:sf, metadata:query.metadata})
 update_sheet_counters(...)
 
 # Ночью: создать операции, потом забрать результаты, нормализовать, дедуп, сохранить companies.
@@ -157,7 +167,7 @@ DEFAULTS_min_no_files
   },
   "spacing_seconds": 45,
   "region_fallback_lr": 225,
-  "max_queries_per_niche": 1,
+  "max_queries_per_city": 4,
   "triggers": [],
   "excluded_domains": [
     "avito.ru",

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass
 from unicodedata import category
 from typing import Dict, Iterable, List, Optional, Set
@@ -20,6 +21,7 @@ from app.modules.utils.email import clean_email, is_valid_email
 from app.modules.utils.normalize import normalize_url
 
 LOGGER = logging.getLogger("app.enrich_contacts")
+EMAIL_RE = re.compile(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", re.IGNORECASE)
 
 
 @dataclass
@@ -157,7 +159,20 @@ class ContactEnricher:
         return inserted_ids
 
     def _build_candidate_urls(self, base_url: str) -> List[str]:
-        suffixes = ["/", "/contact", "/contacts", "/about", "/about-us", "/kontakty"]
+        suffixes = [
+            "/",
+            "/contact",
+            "/contacts",
+            "/contact-us",
+            "/about",
+            "/about-us",
+            "/kontakty",
+            "/contacts/",
+            "/kontakty/",
+            "/arenda",
+            "/leasing",
+            "/rent",
+        ]
         seen: Set[str] = set()
         candidates: List[str] = []
         for suffix in suffixes:
@@ -182,7 +197,6 @@ class ContactEnricher:
         soup = BeautifulSoup(html, "html.parser")
         found_email: Optional[ContactRecord] = None
 
-        # mailto/tel ссылки
         for anchor in soup.find_all("a"):
             href = (anchor.get("href") or "").strip()
             text = anchor.get_text(" ", strip=True)
@@ -198,6 +212,22 @@ class ContactEnricher:
 
         if found_email:
             return [found_email]
+
+        text_content = soup.get_text(" ", strip=True)
+        for match in EMAIL_RE.finditer(text_content):
+            cleaned = clean_email(match.group(0))
+            if not is_valid_email(cleaned):
+                continue
+            return [
+                ContactRecord(
+                    "email",
+                    cleaned,
+                    source_url,
+                    0.8,
+                    origin="text",
+                    label="text_email",
+                )
+            ]
 
         return []
 
