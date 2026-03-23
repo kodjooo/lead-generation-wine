@@ -12,4 +12,4 @@
 
 В GITHUB не нужно отправлять .env файл 
 
-По завершению работ пушь изменения в гитхаб в этот репозиторий git@github.com:kodjooo/lead-generation.git, инициируй его, если это еще не сделано. Информацию по разворачиванию проекта на удаленном сервере нужно писать в readme.md (та там использовать ссылку git pull  - https://github.com/kodjooo/lead-generation.git).
+По завершению работ пушь изменения в гитхаб в этот репозиторий https://github.com/kodjooo/lead-generation-wine.git, инициируй его, если это еще не сделано. Информацию по разворачиванию проекта на удаленном сервере нужно писать в readme.md (та там использовать ссылку git pull  - https://github.com/kodjooo/lead-generation-wine.git).
