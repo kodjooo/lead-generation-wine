@@ -40,7 +40,7 @@ class DummySession:
 
 
 def test_extract_contacts_from_html() -> None:
-    enricher = ContactEnricher(session_factory=lambda: None)  # type: ignore[arg-type]
+    enricher = ContactEnricher(session_factory=lambda: None, sleep_func=lambda _: None)  # type: ignore[arg-type]
     html = """
     <html>
       <body>
@@ -60,7 +60,7 @@ def test_extract_contacts_from_html() -> None:
 
 
 def test_extract_contacts_skips_invalid_mailto() -> None:
-    enricher = ContactEnricher(session_factory=lambda: None)  # type: ignore[arg-type]
+    enricher = ContactEnricher(session_factory=lambda: None, sleep_func=lambda _: None)  # type: ignore[arg-type]
     html = """
     <html>
       <body>
@@ -75,7 +75,7 @@ def test_extract_contacts_skips_invalid_mailto() -> None:
 
 
 def test_extract_contacts_finds_text_email() -> None:
-    enricher = ContactEnricher(session_factory=lambda: None)  # type: ignore[arg-type]
+    enricher = ContactEnricher(session_factory=lambda: None, sleep_func=lambda _: None)  # type: ignore[arg-type]
     html = """
     <html>
       <body>
@@ -94,7 +94,7 @@ def test_extract_contacts_finds_text_email() -> None:
 @respx.mock
 def test_enrich_company_persists_contacts() -> None:
     session = DummySession()
-    enricher = ContactEnricher(session_factory=lambda: session)  # type: ignore[arg-type]
+    enricher = ContactEnricher(session_factory=lambda: session, sleep_func=lambda _: None)  # type: ignore[arg-type]
 
     respx.get("https://site.com/").mock(
         return_value=httpx.Response(
@@ -132,7 +132,7 @@ def test_enrich_company_persists_contacts() -> None:
 @respx.mock
 def test_enrich_company_marks_not_found() -> None:
     session = DummySession()
-    enricher = ContactEnricher(session_factory=lambda: session)  # type: ignore[arg-type]
+    enricher = ContactEnricher(session_factory=lambda: session, sleep_func=lambda _: None)  # type: ignore[arg-type]
 
     respx.get("https://empty.com/").mock(
         return_value=httpx.Response(
@@ -161,7 +161,7 @@ def test_enrich_company_marks_not_found() -> None:
 
 def test_sanitize_excerpt_removes_control_chars() -> None:
     session = DummySession()
-    enricher = ContactEnricher(session_factory=lambda: session)  # type: ignore[arg-type]
+    enricher = ContactEnricher(session_factory=lambda: session, sleep_func=lambda _: None)  # type: ignore[arg-type]
 
     dirty_html = "<html><body>Привет\u0000 мир\u0008!</body></html>"
     enricher._save_homepage_excerpt(session, "company-3", dirty_html)
@@ -171,3 +171,21 @@ def test_sanitize_excerpt_removes_control_chars() -> None:
     data = json.loads(payload)
     assert data["homepage_excerpt"] == "Привет мир!"
     assert "\u0000" not in data["homepage_excerpt"]
+
+
+@respx.mock
+def test_fetch_html_handles_bot_challenge() -> None:
+    session = DummySession()
+    enricher = ContactEnricher(
+        session_factory=lambda: session,  # type: ignore[arg-type]
+        sleep_func=lambda _: None,
+        max_retries=1,
+    )
+
+    respx.get("https://challenge.com/").mock(
+        return_value=httpx.Response(403, text="<html>Verify you are human</html>")
+    )
+
+    html = enricher._fetch_html("https://challenge.com/")
+
+    assert html == ""

@@ -1,0 +1,4499 @@
+{
+  "accepted_domains_snapshot": [
+    "acropolmall.ru",
+    "ayax.ru",
+    "citycenter.ru",
+    "floors-tc.ru",
+    "galaktika-krd.ru",
+    "galleryk.ru",
+    "gk-europeya.ru",
+    "interiorcenter1.ru",
+    "kvartirykrasnodar.ru",
+    "lubimovo.center",
+    "metriks.ru",
+    "moremall.ru",
+    "narodnye-kvartaly.ru",
+    "ozmall.ru",
+    "sun-mall.ru",
+    "tc-moskovskiy.ru",
+    "trc-gorizont.ru",
+    "trilogymall.ru"
+  ],
+  "rejected_unique_domains_count": 222,
+  "rejected_domains": [
+    {
+      "domain": "2gis.ru",
+      "entity_types": [
+        "mall",
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт",
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity",
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://2gis.ru/krasnodar/firm/3237490513161315",
+        "https://2gis.ru/krasnodar/firm/3237490513163067",
+        "https://2gis.ru/krasnodar/search/%D0%90%D0%B3%D0%B5%D0%BD%D1%82%D1%81%D1%82%D0%B2%D0%B0%20%D0%BD%D0%B5%D0%B4%D0%B2%D0%B8%D0%B6%D0%B8%D0%BC%D0%BE%D1%81%D1%82%D0%B8%2C%20%D1%80%D0%B8%D1%8D%D0%BB%D1%82%D0%BE%D1%80%D1%81%D0%BA%D0%B8%D0%B5%20%D1%83%D1%81%D0%BB%D1%83%D0%B3%D0%B8/rubricId/275",
+        "https://2gis.ru/krasnodar/search/%D0%9A%D1%80%D0%B0%D1%81%D0%BD%D0%BE%D0%B4%D0%B0%D1%80%D1%81%D0%BA%D0%B8%D0%B9%20%D0%BA%D1%80%D0%B0%D0%B9%20%D0%B0%D0%B3%D0%B5%D0%BD%D1%82%D1%81%D1%82%D0%B2%D0%B0%20%D0%BD%D0%B5%D0%B4%D0%B2%D0%B8%D0%B6%D0%B8%D0%BC%D0%BE%D1%81%D1%82%D0%B8"
+      ],
+      "sample_titles": [
+        "2gis.ru",
+        "Красная Площадь, мегацентр, улица Дзержинского, 100..."
+      ]
+    },
+    {
+      "domain": "93.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://93.ru/text/gorod/2024/01/15/73105196"
+      ],
+      "sample_titles": [
+        "Кто владеет"
+      ]
+    },
+    {
+      "domain": "aawards.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://aawards.ru/nominees/891"
+      ],
+      "sample_titles": [
+        "Arendator Awards -"
+      ]
+    },
+    {
+      "domain": "afisha.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "homepage:homepage_missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://afisha.ru/krasnodar/shop/malls"
+      ],
+      "sample_titles": [
+        "Магазины и"
+      ]
+    },
+    {
+      "domain": "afisha.yandex.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:low_serp_score",
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 2.0,
+      "sample_urls": [
+        "https://afisha.yandex.ru/krasnodar/other/places/trts-galereia"
+      ],
+      "sample_titles": [
+        "afisha.yandex.ru",
+        "ТРЦ «Галерея» – купить билеты в"
+      ]
+    },
+    {
+      "domain": "agencies.domclick.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:aggregator_url_pattern"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://agencies.domclick.ru/agencies/krasnodarsky-kray-gorod-krasnodar"
+      ],
+      "sample_titles": [
+        "agencies.domclick.ru"
+      ]
+    },
+    {
+      "domain": "ainskrd.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://ainskrd.ru/"
+      ],
+      "sample_titles": [
+        "ainskrd.ru"
+      ]
+    },
+    {
+      "domain": "andevelug.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://andevelug.ru/"
+      ],
+      "sample_titles": [
+        "andevelug.ru"
+      ]
+    },
+    {
+      "domain": "ap-r.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://ap-r.ru/",
+        "https://ap-r.ru/krasnodar"
+      ],
+      "sample_titles": [
+        "Новостройки"
+      ]
+    },
+    {
+      "domain": "apikk.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://apikk.ru/"
+      ],
+      "sample_titles": [
+        "Главная"
+      ]
+    },
+    {
+      "domain": "apps.apple.com",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://apps.apple.com/ru/app/%D1%86%D0%B5%D0%BD%D1%82%D1%80-%D0%B3%D0%BE%D1%80%D0%BE%D0%B4%D0%B0-%D1%82%D0%BE%D1%80%D0%B3%D0%BE%D0%B2%D1%8B%D0%B9-%D0%BA%D0%B2%D0%B0%D1%80%D1%82%D0%B0%D0%BB/id1637842487"
+      ],
+      "sample_titles": [
+        "Приложение «"
+      ]
+    },
+    {
+      "domain": "arenda-meriton.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://arenda-meriton.ru/object/trading_area"
+      ],
+      "sample_titles": [
+        "Объекты площадей под торговлю, офисы, склады, общепит..."
+      ]
+    },
+    {
+      "domain": "arenda-trk.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://arenda-trk.ru/tag/krasnodar"
+      ],
+      "sample_titles": [
+        "arenda-trk.ru"
+      ]
+    },
+    {
+      "domain": "asali.pro",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://asali.pro/"
+      ],
+      "sample_titles": [
+        "asali.pro"
+      ]
+    },
+    {
+      "domain": "au-rielt.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://au-rielt.ru/"
+      ],
+      "sample_titles": [
+        "Покупка, продажа, сдача"
+      ]
+    },
+    {
+      "domain": "avadom.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://avadom.ru/"
+      ],
+      "sample_titles": [
+        "AVA –"
+      ]
+    },
+    {
+      "domain": "avagroup.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://avagroup.ru/"
+      ],
+      "sample_titles": [
+        "AVA Group — Многопрофильный холдинг"
+      ]
+    },
+    {
+      "domain": "avito.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://avito.ru/krasnodar/nedvizhimost"
+      ],
+      "sample_titles": [
+        "avito.ru"
+      ]
+    },
+    {
+      "domain": "baucenter.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://baucenter.ru/store/rostov",
+        "https://baucenter.ru/store/seleznev"
+      ],
+      "sample_titles": [
+        "Ростовское шоссе, 28/7 сети строительных гипермаркетов Бауцентр",
+        "ул. Селезнева, 4 сети строительных гипермаркетов Бауцентр"
+      ]
+    },
+    {
+      "domain": "be-in.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:aggregator_url_pattern"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://be-in.ru/mall/486-galereyakrasnodar",
+        "https://be-in.ru/mall/846-centrgoroda"
+      ],
+      "sample_titles": [
+        "be-in.ru",
+        "ТРЦ «"
+      ]
+    },
+    {
+      "domain": "bsfc.com",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://bsfc.com/",
+        "https://bsfc.com/about/contacts"
+      ],
+      "sample_titles": [
+        "bsfc.com",
+        "Контакты"
+      ]
+    },
+    {
+      "domain": "can-ug.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://can-ug.ru/"
+      ],
+      "sample_titles": [
+        "can-ug.ru"
+      ]
+    },
+    {
+      "domain": "centergoroda.com",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://centergoroda.com/"
+      ],
+      "sample_titles": [
+        "centergoroda.com"
+      ]
+    },
+    {
+      "domain": "centravrora.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://centravrora.ru/"
+      ],
+      "sample_titles": [
+        "Центр"
+      ]
+    },
+    {
+      "domain": "centrug.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 2.4,
+      "sample_urls": [
+        "https://centrug.ru/"
+      ],
+      "sample_titles": [
+        "Купить квартиру в"
+      ]
+    },
+    {
+      "domain": "century21.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:aggregator_url_pattern"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://century21.ru/agency/inkrasnodar"
+      ],
+      "sample_titles": [
+        "century21.ru"
+      ]
+    },
+    {
+      "domain": "crt-kk.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://crt-kk.ru/"
+      ],
+      "sample_titles": [
+        "Главная - ГКУ КК \""
+      ]
+    },
+    {
+      "domain": "ctmalls.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:aggregator_url_pattern"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://ctmalls.ru/mall/462"
+      ],
+      "sample_titles": [
+        "ctmalls.ru",
+        "ТРЦ «"
+      ]
+    },
+    {
+      "domain": "detmir.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://detmir.ru/shops/item/id/221"
+      ],
+      "sample_titles": [
+        "Магазин «Детский мир» —"
+      ]
+    },
+    {
+      "domain": "develug.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 2.4,
+      "sample_urls": [
+        "https://develug.ru/"
+      ],
+      "sample_titles": [
+        "Строительная",
+        "Строительная компания Девелопмент-Юг -"
+      ]
+    },
+    {
+      "domain": "dicentre.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://dicentre.ru/"
+      ],
+      "sample_titles": [
+        "Dicentre - интернет магазин цифровой электроники и бытовой..."
+      ]
+    },
+    {
+      "domain": "dknkrd.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://dknkrd.ru/"
+      ],
+      "sample_titles": [
+        "dknkrd.ru"
+      ]
+    },
+    {
+      "domain": "dns-shop.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://dns-shop.ru/shops/krasnodar"
+      ],
+      "sample_titles": [
+        "Магазины DNS в г."
+      ]
+    },
+    {
+      "domain": "dvnak.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:low_serp_score",
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 2.0,
+      "sample_urls": [
+        "https://dvnak.ru/stati/1374-top-4-torgovyh-centra-krasnodara.html"
+      ],
+      "sample_titles": [
+        "Топ-4"
+      ]
+    },
+    {
+      "domain": "dzen.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity",
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://dzen.ru/a/XQuWHiXWtACvVl74",
+        "https://dzen.ru/centergoroda_foodmarket"
+      ],
+      "sample_titles": [
+        "Лучшие",
+        "ТК \""
+      ]
+    },
+    {
+      "domain": "egorod.info",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://egorod.info/"
+      ],
+      "sample_titles": [
+        "egorod.info"
+      ]
+    },
+    {
+      "domain": "ek-invest.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 2.4,
+      "sample_urls": [
+        "https://ek-invest.ru/"
+      ],
+      "sample_titles": [
+        "Квартиры в новостройках от застройщика"
+      ]
+    },
+    {
+      "domain": "eldorado.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://eldorado.ru/info/shops/11300"
+      ],
+      "sample_titles": [
+        "Адреса магазинов \"Эльдорадо\" в городе"
+      ]
+    },
+    {
+      "domain": "elis.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://elis.ru/shops/krasnodar/11251"
+      ],
+      "sample_titles": [
+        "Магазин Elis в городе"
+      ]
+    },
+    {
+      "domain": "estate-krd.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://estate-krd.ru/"
+      ],
+      "sample_titles": [
+        "estate-krd.ru"
+      ]
+    },
+    {
+      "domain": "estate.nd9.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://estate.nd9.ru/"
+      ],
+      "sample_titles": [
+        "estate.nd9.ru"
+      ]
+    },
+    {
+      "domain": "etagikrasnodar.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://etagikrasnodar.ru/"
+      ],
+      "sample_titles": [
+        "Работа в компании Этажи"
+      ]
+    },
+    {
+      "domain": "evroremont-krd.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://evroremont-krd.ru/"
+      ],
+      "sample_titles": [
+        "evroremont-krd.ru"
+      ]
+    },
+    {
+      "domain": "evroremont-tk.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity",
+        "serp:negative_marker"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://evroremont-tk.ru/"
+      ],
+      "sample_titles": [
+        "Аренда помещений в"
+      ]
+    },
+    {
+      "domain": "expograd-yug.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://expograd-yug.ru/"
+      ],
+      "sample_titles": [
+        "Организация выставок"
+      ]
+    },
+    {
+      "domain": "family-yug.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://family-yug.ru/"
+      ],
+      "sample_titles": [
+        "Строительная компания «Семья» -"
+      ]
+    },
+    {
+      "domain": "feniks-yug.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://feniks-yug.ru/"
+      ],
+      "sample_titles": [
+        "Феникс-Юг |"
+      ]
+    },
+    {
+      "domain": "fivestarscenter.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://fivestarscenter.ru/"
+      ],
+      "sample_titles": [
+        "Мебельный"
+      ]
+    },
+    {
+      "domain": "flagmankrd.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://flagmankrd.ru/"
+      ],
+      "sample_titles": [
+        "Флагман группа",
+        "Флагман группа компаний - квартиры и жилые комплексы..."
+      ]
+    },
+    {
+      "domain": "flotiliya-krd.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://flotiliya-krd.ru/"
+      ],
+      "sample_titles": [
+        "flotiliya-krd.ru"
+      ]
+    },
+    {
+      "domain": "foodmarketcentergoroda.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://foodmarketcentergoroda.ru/"
+      ],
+      "sample_titles": [
+        "FOODMARKET"
+      ]
+    },
+    {
+      "domain": "forumplaza.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://forumplaza.ru/"
+      ],
+      "sample_titles": [
+        "FORUM PLAZA, отель в"
+      ]
+    },
+    {
+      "domain": "gaudirielt.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://gaudirielt.ru/"
+      ],
+      "sample_titles": [
+        "Гауди риелт Честное"
+      ]
+    },
+    {
+      "domain": "gk-nvm.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://gk-nvm.ru/"
+      ],
+      "sample_titles": [
+        "gk-nvm.ru"
+      ]
+    },
+    {
+      "domain": "gk-usi.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 3.6,
+      "sample_urls": [
+        "https://gk-usi.ru/"
+      ],
+      "sample_titles": [
+        "ЮгСтройИнвест – Купить квартиру напрямую от застройщика на..."
+      ]
+    },
+    {
+      "domain": "good-rielt.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://good-rielt.ru/"
+      ],
+      "sample_titles": [
+        "Лучшее"
+      ]
+    },
+    {
+      "domain": "google.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://google.ru/maps/d/viewer?mid=15hjYCJ2tL8jz9y3bD-4CJOt0_oI&hl=ru&ll=0%2C0&z=17"
+      ],
+      "sample_titles": [
+        "google.ru"
+      ]
+    },
+    {
+      "domain": "grc-sochi.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://grc-sochi.ru/"
+      ],
+      "sample_titles": [
+        "grc-sochi.ru"
+      ]
+    },
+    {
+      "domain": "havilla.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 2.4,
+      "sample_urls": [
+        "https://havilla.ru/"
+      ],
+      "sample_titles": [
+        "Подбор, покупка и продажа"
+      ]
+    },
+    {
+      "domain": "hcmoda.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://hcmoda.ru/"
+      ],
+      "sample_titles": [
+        "ХЦ — сеть универмагов и магазинов модной одежды"
+      ]
+    },
+    {
+      "domain": "hoff.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://hoff.ru/shops/krasnodar/hoff_diskont_krasnodar",
+        "https://hoff.ru/shops/krasnodar/hoff_krasnaya-ploshchad"
+      ],
+      "sample_titles": [
+        "Гипермаркет Hoff в",
+        "Гипермаркет Hoff в мегацентре «Красная площадь», г."
+      ]
+    },
+    {
+      "domain": "incitystroy.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://incitystroy.ru/"
+      ],
+      "sample_titles": [
+        "ИНСИТИ девелопмент — Надежный застройщик"
+      ]
+    },
+    {
+      "domain": "intimissimi.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://intimissimi.ru/"
+      ],
+      "sample_titles": [
+        "Intimissimi |"
+      ]
+    },
+    {
+      "domain": "irecommend.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://irecommend.ru/content/stoit-li-ekhat-na-shoping-i-razvlecheniya-na-krasnuyu-ploshchad-v-krasnodare-mnogo-moikh-fot",
+        "https://irecommend.ru/srch?query=%D0%A2%D0%BE%D1%80%D0%B3%D0%BE%D0%B2%D1%8B%D0%B5%20%D1%86%D0%B5%D0%BD%D1%82%D1%80%D1%8B%20%D0%BA%D1%80%D0%B0%D1%81%D0%BD%D0%BE%D0%B4%D0%B0%D1%80"
+      ],
+      "sample_titles": [
+        "irecommend.ru",
+        "Красная Площадь,"
+      ]
+    },
+    {
+      "domain": "jivem-doma.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://jivem-doma.ru/"
+      ],
+      "sample_titles": [
+        "«Живем дома» группа",
+        "«Живем дома» группа компаний"
+      ]
+    },
+    {
+      "domain": "kanzler-style.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://kanzler-style.ru/"
+      ],
+      "sample_titles": [
+        "Интернет-магазин мужской и женской одежды KANZLER в Москве"
+      ]
+    },
+    {
+      "domain": "karofilm.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://karofilm.ru/cinema/63"
+      ],
+      "sample_titles": [
+        "Расписание кинотеатра"
+      ]
+    },
+    {
+      "domain": "kayan.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://kayan.ru/"
+      ],
+      "sample_titles": [
+        "kayan.ru"
+      ]
+    },
+    {
+      "domain": "klyuch-agency.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://klyuch-agency.ru/"
+      ],
+      "sample_titles": [
+        "klyuch-agency.ru"
+      ]
+    },
+    {
+      "domain": "kommersant.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://kommersant.ru/doc/7419989"
+      ],
+      "sample_titles": [
+        "kommersant.ru"
+      ]
+    },
+    {
+      "domain": "kp.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://kp.ru/russia/krasnodar/nedvizhimost/luchshie-agentstva-nedvizhimosti"
+      ],
+      "sample_titles": [
+        "10 лучших"
+      ]
+    },
+    {
+      "domain": "krasdom.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity",
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasdom.ru/",
+        "https://krasdom.ru/organization/list/agency"
+      ],
+      "sample_titles": [
+        "krasdom.ru"
+      ]
+    },
+    {
+      "domain": "krasnodar-1.n1.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar-1.n1.ru/"
+      ],
+      "sample_titles": [
+        "krasnodar-1.n1.ru"
+      ]
+    },
+    {
+      "domain": "krasnodar-novostroy.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar-novostroy.ru/"
+      ],
+      "sample_titles": [
+        "krasnodar-novostroy.ru"
+      ]
+    },
+    {
+      "domain": "krasnodar.allestate.pro",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://krasnodar.allestate.pro/"
+      ],
+      "sample_titles": [
+        "krasnodar.allestate.pro"
+      ]
+    },
+    {
+      "domain": "krasnodar.an-rakurs.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 2.4,
+      "sample_urls": [
+        "https://krasnodar.an-rakurs.ru/"
+      ],
+      "sample_titles": [
+        "Купить квартиру - Центр"
+      ]
+    },
+    {
+      "domain": "krasnodar.arendator.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:aggregator_url_pattern"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.arendator.ru/objects/retail"
+      ],
+      "sample_titles": [
+        "krasnodar.arendator.ru"
+      ]
+    },
+    {
+      "domain": "krasnodar.arrpro.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.arrpro.ru/"
+      ],
+      "sample_titles": [
+        "Коммерческая"
+      ]
+    },
+    {
+      "domain": "krasnodar.cataloxy.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://krasnodar.cataloxy.ru/firms/tc-planeta.com.htm"
+      ],
+      "sample_titles": [
+        "krasnodar.cataloxy.ru"
+      ]
+    },
+    {
+      "domain": "krasnodar.cian.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity",
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.cian.ru/",
+        "https://krasnodar.cian.ru/agentstva"
+      ],
+      "sample_titles": [
+        "krasnodar.cian.ru",
+        "Циан - база"
+      ]
+    },
+    {
+      "domain": "krasnodar.city.kidburg.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.city.kidburg.ru/"
+      ],
+      "sample_titles": [
+        "КидБург Профессии"
+      ]
+    },
+    {
+      "domain": "krasnodar.cmns.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.cmns.ru/"
+      ],
+      "sample_titles": [
+        "Центр Мониторинга"
+      ]
+    },
+    {
+      "domain": "krasnodar.cnng.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.cnng.ru/"
+      ],
+      "sample_titles": [
+        "krasnodar.cnng.ru"
+      ]
+    },
+    {
+      "domain": "krasnodar.etagi.com",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.etagi.com/"
+      ],
+      "sample_titles": [
+        "ᐉ"
+      ]
+    },
+    {
+      "domain": "krasnodar.flamp.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.flamp.ru/cat/torgovye_kompleksy_specmagaziny/torgovye_centry"
+      ],
+      "sample_titles": [
+        "krasnodar.flamp.ru"
+      ]
+    },
+    {
+      "domain": "krasnodar.jilfond.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.jilfond.ru/"
+      ],
+      "sample_titles": [
+        "krasnodar.jilfond.ru"
+      ]
+    },
+    {
+      "domain": "krasnodar.jsprav.ru",
+      "entity_types": [
+        "mall",
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт",
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity",
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.jsprav.ru/agentstva-nedvizhimosti",
+        "https://krasnodar.jsprav.ru/torgovyie-tsentryi"
+      ],
+      "sample_titles": [
+        "ТОП-50:"
+      ]
+    },
+    {
+      "domain": "krasnodar.mirkvartir.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://krasnodar.mirkvartir.ru/"
+      ],
+      "sample_titles": [
+        "krasnodar.mirkvartir.ru"
+      ]
+    },
+    {
+      "domain": "krasnodar.mmir.pro",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity",
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.mmir.pro/",
+        "https://krasnodar.mmir.pro/agents"
+      ],
+      "sample_titles": [
+        "krasnodar.mmir.pro",
+        "Макромир"
+      ]
+    },
+    {
+      "domain": "krasnodar.move.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity",
+        "serp:negative_marker"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://krasnodar.move.ru/",
+        "https://krasnodar.move.ru/agency/krasnodar"
+      ],
+      "sample_titles": [
+        "krasnodar.move.ru"
+      ]
+    },
+    {
+      "domain": "krasnodar.olan.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.olan.ru/"
+      ],
+      "sample_titles": [
+        "krasnodar.olan.ru"
+      ]
+    },
+    {
+      "domain": "krasnodar.red-square.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.red-square.ru/"
+      ],
+      "sample_titles": [
+        "«Красная Площадь» в"
+      ]
+    },
+    {
+      "domain": "krasnodar.restate.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.restate.ru/company/type-agentstva"
+      ],
+      "sample_titles": [
+        "krasnodar.restate.ru"
+      ]
+    },
+    {
+      "domain": "krasnodar.spravker.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity",
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.spravker.ru/torgovye-centry"
+      ],
+      "sample_titles": [
+        "krasnodar.spravker.ru"
+      ]
+    },
+    {
+      "domain": "krasnodar.trendagent.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.trendagent.ru/"
+      ],
+      "sample_titles": [
+        "TrendAgent"
+      ]
+    },
+    {
+      "domain": "krasnodar.ya23.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar.ya23.ru/torgovye-tsentry"
+      ],
+      "sample_titles": [
+        "krasnodar.ya23.ru"
+      ]
+    },
+    {
+      "domain": "krasnodar24.su",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodar24.su/tc"
+      ],
+      "sample_titles": [
+        "krasnodar24.su"
+      ]
+    },
+    {
+      "domain": "krasnodarkvartira.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://krasnodarkvartira.ru/"
+      ],
+      "sample_titles": [
+        "krasnodarkvartira.ru"
+      ]
+    },
+    {
+      "domain": "krasnodarnew.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krasnodarnew.ru/gorod/torgovye-centry.html"
+      ],
+      "sample_titles": [
+        "krasnodarnew.ru"
+      ]
+    },
+    {
+      "domain": "krd.antiagent.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 3.6,
+      "sample_urls": [
+        "https://krd.antiagent.ru/"
+      ],
+      "sample_titles": [
+        "продажа и аренда квартир/домов без посредников в"
+      ]
+    },
+    {
+      "domain": "krd.kassir.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krd.kassir.ru/"
+      ],
+      "sample_titles": [
+        "Афиша"
+      ]
+    },
+    {
+      "domain": "krd.kudago.com",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krd.kudago.com/place/torgovyj-kompleks-centr-goroda"
+      ],
+      "sample_titles": [
+        "krd.kudago.com"
+      ]
+    },
+    {
+      "domain": "krd.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://krd.ru/",
+        "https://krd.ru/administratsiya/administratsii-krasnodara/departament-po-svyazyam-s-obschestvennostyu-vzaimodeystviyu/territorialnye-tsentry"
+      ],
+      "sample_titles": [
+        "krd.ru",
+        "Территориальные"
+      ]
+    },
+    {
+      "domain": "krdestate.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 3.6,
+      "sample_urls": [
+        "https://krdestate.ru/"
+      ],
+      "sample_titles": [
+        "Купить квартиру от застройщика в новостройках"
+      ]
+    },
+    {
+      "domain": "kubannovostroi.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://kubannovostroi.ru/"
+      ],
+      "sample_titles": [
+        "kubannovostroi.ru"
+      ]
+    },
+    {
+      "domain": "kubnews.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://kubnews.ru/obshchestvo/2023/12/25/stalo-izvestno-kak-budut-rabotat-torgovye-tsentry-i-gipermarkety-krasnodara-v-novogodnie-prazdniki-"
+      ],
+      "sample_titles": [
+        "Стало известно, как будут работать"
+      ]
+    },
+    {
+      "domain": "kuchenland.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://kuchenland.ru/"
+      ],
+      "sample_titles": [
+        "Товары для дома от Kuchenland Home – купить на"
+      ]
+    },
+    {
+      "domain": "kvadratmarket.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://kvadratmarket.ru/"
+      ],
+      "sample_titles": [
+        "«КВАДРАТ» - Керамическая плитка и сантехника для всех!"
+      ]
+    },
+    {
+      "domain": "labetsky.estate",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://labetsky.estate/"
+      ],
+      "sample_titles": [
+        "labetsky.estate"
+      ]
+    },
+    {
+      "domain": "leto-realty.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://leto-realty.ru/"
+      ],
+      "sample_titles": [
+        "Подбор"
+      ]
+    },
+    {
+      "domain": "letto.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://letto.ru/"
+      ],
+      "sample_titles": [
+        "LETTO |"
+      ]
+    },
+    {
+      "domain": "lgcity.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://lgcity.ru/"
+      ],
+      "sample_titles": [
+        "lady&gentleman CITY интернет-магазин модной брендовой одежды..."
+      ]
+    },
+    {
+      "domain": "lunniy.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://lunniy.ru/"
+      ],
+      "sample_titles": [
+        "lunniy.ru"
+      ]
+    },
+    {
+      "domain": "m-reason.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://m-reason.ru/about/shops"
+      ],
+      "sample_titles": [
+        "Магазины M.REASON"
+      ]
+    },
+    {
+      "domain": "m.ok.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 3.6,
+      "sample_urls": [
+        "https://m.ok.ru/group/51972853137508"
+      ],
+      "sample_titles": [
+        "Группа Мегацентр \"Красная Площадь\" г."
+      ]
+    },
+    {
+      "domain": "m2.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://m2.ru/krasnodar"
+      ],
+      "sample_titles": [
+        "Метр квадратный (М2) в"
+      ]
+    },
+    {
+      "domain": "m2expert.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://m2expert.ru/"
+      ],
+      "sample_titles": [
+        "m2expert.ru"
+      ]
+    },
+    {
+      "domain": "magazinnoff.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://magazinnoff.ru/tc/mc-krasnaya-ploshad-krasnodar/shops"
+      ],
+      "sample_titles": [
+        "МЦ «Красная Площадь»"
+      ]
+    },
+    {
+      "domain": "malls.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:aggregator_url_pattern"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://malls.ru/city/krasnodar.shtml"
+      ],
+      "sample_titles": [
+        "malls.ru"
+      ]
+    },
+    {
+      "domain": "mandarin-mall.com",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:low_serp_score"
+      ],
+      "max_score": 2.0,
+      "sample_urls": [
+        "https://mandarin-mall.com/cafes"
+      ],
+      "sample_titles": [
+        "Рестораны и кафе — Мандарин"
+      ]
+    },
+    {
+      "domain": "maralin.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://maralin.ru/"
+      ],
+      "sample_titles": [
+        "Маралин - Элитная"
+      ]
+    },
+    {
+      "domain": "marmalato.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://marmalato.ru/"
+      ],
+      "sample_titles": [
+        "Marmalato - интернет-магазин трендовой и базовой женской обуви..."
+      ]
+    },
+    {
+      "domain": "mayakgm.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://mayakgm.ru/"
+      ],
+      "sample_titles": [
+        "Гипермаркет низких цен МАЯК - по-настоящему низкие цены!"
+      ]
+    },
+    {
+      "domain": "mcmebelgrad.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://mcmebelgrad.ru/"
+      ],
+      "sample_titles": [
+        "Мебельный"
+      ]
+    },
+    {
+      "domain": "mega.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://mega.ru/adygeya"
+      ],
+      "sample_titles": [
+        "МЕГА Адыгея-Кубань -"
+      ]
+    },
+    {
+      "domain": "meridianoutlet.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://meridianoutlet.ru/"
+      ],
+      "sample_titles": [
+        "Meridian"
+      ]
+    },
+    {
+      "domain": "merkkrd.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://merkkrd.ru/"
+      ],
+      "sample_titles": [
+        "merkkrd.ru"
+      ]
+    },
+    {
+      "domain": "metro-cc.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://metro-cc.ru/"
+      ],
+      "sample_titles": [
+        "METRO | Для бизнеса и покупателей"
+      ]
+    },
+    {
+      "domain": "metropolis-group.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://metropolis-group.ru/projects/torgovye-kompleksy/galereya-krasnodar"
+      ],
+      "sample_titles": [
+        "Галерея «"
+      ]
+    },
+    {
+      "domain": "mistypark23.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://mistypark23.ru/"
+      ],
+      "sample_titles": [
+        "Мисти Парк"
+      ]
+    },
+    {
+      "domain": "mnl23.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://mnl23.ru/"
+      ],
+      "sample_titles": [
+        "Вся"
+      ]
+    },
+    {
+      "domain": "moreon-invest.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://moreon-invest.ru/"
+      ],
+      "sample_titles": [
+        "moreon-invest.ru"
+      ]
+    },
+    {
+      "domain": "neagent.info",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://neagent.info/",
+        "https://neagent.info/krasnodar"
+      ],
+      "sample_titles": [
+        "neagent.info",
+        "НЕАГЕНТ —"
+      ]
+    },
+    {
+      "domain": "nedvizhimost-kubani.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://nedvizhimost-kubani.ru/"
+      ],
+      "sample_titles": [
+        "nedvizhimost-kubani.ru"
+      ]
+    },
+    {
+      "domain": "nedvizhimost93.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://nedvizhimost93.ru/"
+      ],
+      "sample_titles": [
+        "nedvizhimost93.ru"
+      ]
+    },
+    {
+      "domain": "neometria.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://neometria.ru/"
+      ],
+      "sample_titles": [
+        "Купить"
+      ]
+    },
+    {
+      "domain": "nerielt.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://nerielt.ru/"
+      ],
+      "sample_titles": [
+        "Главная - Бесплатный сервис анализа и подбора новостроек..."
+      ]
+    },
+    {
+      "domain": "newyorker.de",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://newyorker.de/ru"
+      ],
+      "sample_titles": [
+        "NEW YORKER | Dress for the moment"
+      ]
+    },
+    {
+      "domain": "novometr23.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:low_serp_score",
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 2.0,
+      "sample_urls": [
+        "https://novometr23.ru/"
+      ],
+      "sample_titles": [
+        "novometr23.ru"
+      ]
+    },
+    {
+      "domain": "novoteh.org",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://novoteh.org/"
+      ],
+      "sample_titles": [
+        "НОВОТЕХ"
+      ]
+    },
+    {
+      "domain": "npkpn.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://npkpn.ru/"
+      ],
+      "sample_titles": [
+        "Кубанская Палата"
+      ]
+    },
+    {
+      "domain": "orgpage.ru",
+      "entity_types": [
+        "mall",
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт",
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity",
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://orgpage.ru/krasnodar/%D0%B0%D0%B3%D0%B5%D0%BD%D1%82%D1%81%D1%82%D0%B2%D0%B0_%D0%BD%D0%B5%D0%B4%D0%B2%D0%B8%D0%B6%D0%B8%D0%BC%D0%BE%D1%81%D1%82%D0%B8",
+        "https://orgpage.ru/krasnodar/%D1%82%D0%BE%D1%80%D0%B3%D0%BE%D0%B2%D1%8B%D0%B5_%D1%86%D0%B5%D0%BD%D1%82%D1%80%D1%8B"
+      ],
+      "sample_titles": [
+        "orgpage.ru"
+      ]
+    },
+    {
+      "domain": "otzovik.com",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:aggregator_url_pattern"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://otzovik.com/review_5300902.html"
+      ],
+      "sample_titles": [
+        "Отзыв о"
+      ]
+    },
+    {
+      "domain": "oz-one.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://oz-one.ru/"
+      ],
+      "sample_titles": [
+        "oz-one.ru",
+        "Развлекательный"
+      ]
+    },
+    {
+      "domain": "parkkrasnodar.com",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://parkkrasnodar.com/"
+      ],
+      "sample_titles": [
+        "Амфитеатр"
+      ]
+    },
+    {
+      "domain": "perspektiva.vip",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://perspektiva.vip/"
+      ],
+      "sample_titles": [
+        "perspektiva.vip"
+      ]
+    },
+    {
+      "domain": "prisli.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://prisli.ru/"
+      ],
+      "sample_titles": [
+        "prisli.ru"
+      ]
+    },
+    {
+      "domain": "proadresa.com",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://proadresa.com/"
+      ],
+      "sample_titles": [
+        "Ипотечный центр"
+      ]
+    },
+    {
+      "domain": "ramo.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://ramo.ru/business/current/article106.html"
+      ],
+      "sample_titles": [
+        "Мегацентр «Красная Площадь», г."
+      ]
+    },
+    {
+      "domain": "rcrealty.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://rcrealty.ru/"
+      ],
+      "sample_titles": [
+        "Центр"
+      ]
+    },
+    {
+      "domain": "realty.yandex.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://realty.yandex.ru/krasnodarskiy_kray/agentstva/ayaks-krasnodar-223087777"
+      ],
+      "sample_titles": [
+        "Аякс"
+      ]
+    },
+    {
+      "domain": "redsquare-mebel.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://redsquare-mebel.ru/"
+      ],
+      "sample_titles": [
+        "\"Мебельный"
+      ]
+    },
+    {
+      "domain": "reestr.rgr.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:aggregator_url_pattern"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://reestr.rgr.ru/agentstva-nedvizhimosti/krasnodarskiy-kray",
+        "https://reestr.rgr.ru/agentstva-nedvizhimosti/krasnodarskiy-kray/krasnodar-9588"
+      ],
+      "sample_titles": [
+        "Cертифицированные",
+        "Сертифицированные"
+      ]
+    },
+    {
+      "domain": "respect-shoes.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://respect-shoes.ru/shops/101"
+      ],
+      "sample_titles": [
+        "Магазин обуви Respect в"
+      ]
+    },
+    {
+      "domain": "romexgr.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://romexgr.ru/activities/torgovye-czentry"
+      ],
+      "sample_titles": [
+        "romexgr.ru"
+      ]
+    },
+    {
+      "domain": "ru.ruwiki.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://ru.ruwiki.ru/wiki/%D0%9A%D1%80%D0%B0%D1%81%D0%BD%D0%B0%D1%8F_%D0%9F%D0%BB%D0%BE%D1%89%D0%B0%D0%B4%D1%8C_(%D1%81%D0%B5%D1%82%D1%8C_%D1%82%D0%BE%D1%80%D0%B3%D0%BE%D0%B2%D0%BE-%D1%80%D0%B0%D0%B7%D0%B2%D0%BB%D0%B5%D0%BA%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D1%8B%D1%85_%D1%86%D0%B5%D0%BD%D1%82%D1%80%D0%BE%D0%B2)"
+      ],
+      "sample_titles": [
+        "Красная Площадь (сеть"
+      ]
+    },
+    {
+      "domain": "ru.wikipedia.org",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://ru.wikipedia.org/wiki/%D0%9A%D1%80%D0%B0%D1%81%D0%BD%D0%B0%D1%8F_%D0%9F%D0%BB%D0%BE%D1%89%D0%B0%D0%B4%D1%8C_(%D1%81%D0%B5%D1%82%D1%8C_%D1%82%D0%BE%D1%80%D0%B3%D0%BE%D0%B2%D0%BE-%D1%80%D0%B0%D0%B7%D0%B2%D0%BB%D0%B5%D0%BA%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D1%8B%D1%85_%D1%86%D0%B5%D0%BD%D1%82%D1%80%D0%BE%D0%B2)"
+      ],
+      "sample_titles": [
+        "Красная Площадь (сеть"
+      ]
+    },
+    {
+      "domain": "samoletplus.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://samoletplus.ru/krasnodar"
+      ],
+      "sample_titles": [
+        "samoletplus.ru"
+      ]
+    },
+    {
+      "domain": "sbsmegamall.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:low_serp_score"
+      ],
+      "max_score": 2.0,
+      "sample_urls": [
+        "https://sbsmegamall.ru/"
+      ],
+      "sample_titles": [
+        "«СБС:"
+      ]
+    },
+    {
+      "domain": "shop.fckrasnodar.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://shop.fckrasnodar.ru/about/fan/store"
+      ],
+      "sample_titles": [
+        "Магазины Атрибутики"
+      ]
+    },
+    {
+      "domain": "shopandmall.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:aggregator_url_pattern",
+        "serp:low_serp_score"
+      ],
+      "max_score": 2.0,
+      "sample_urls": [
+        "https://shopandmall.ru/torgovye-centry/centr_goroda-krasnodar-ul__krasnaya__1761",
+        "https://shopandmall.ru/vse-torgovye-centry/krasnodar"
+      ],
+      "sample_titles": [
+        "shopandmall.ru"
+      ]
+    },
+    {
+      "domain": "shopsinmalls.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:aggregator_url_pattern"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://shopsinmalls.ru/cities/krasnodar/1753-centr-goroda"
+      ],
+      "sample_titles": [
+        "shopsinmalls.ru"
+      ]
+    },
+    {
+      "domain": "sk-bauinvest.ru",
+      "entity_types": [
+        "mall",
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity",
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 3.6,
+      "sample_urls": [
+        "https://sk-bauinvest.ru/",
+        "https://sk-bauinvest.ru/commercial/torgovyi-kompleks-gmr"
+      ],
+      "sample_titles": [
+        "Купить Квартиру в",
+        "Купить помещение под офис, магазин в"
+      ]
+    },
+    {
+      "domain": "smartrielt.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://smartrielt.ru/"
+      ],
+      "sample_titles": [
+        "Купить"
+      ]
+    },
+    {
+      "domain": "smenikvarti.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://smenikvarti.ru/"
+      ],
+      "sample_titles": [
+        "Главная > Сменикварти.ру"
+      ]
+    },
+    {
+      "domain": "snowqueen.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:aggregator_url_pattern",
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://snowqueen.ru/catalog",
+        "https://snowqueen.ru/shops"
+      ],
+      "sample_titles": [
+        "Сеть магазинов «Снежная Королева»",
+        "Снежная Королева"
+      ]
+    },
+    {
+      "domain": "statuskrd.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://statuskrd.ru/"
+      ],
+      "sample_titles": [
+        "СтатусЪ I Новостройки"
+      ]
+    },
+    {
+      "domain": "svoi.live",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://svoi.live/"
+      ],
+      "sample_titles": [
+        "svoi.live"
+      ]
+    },
+    {
+      "domain": "svoi23.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://svoi23.ru/"
+      ],
+      "sample_titles": [
+        "svoi23.ru"
+      ]
+    },
+    {
+      "domain": "t.me",
+      "entity_types": [
+        "mall",
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт",
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity",
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://t.me/estate_krasnodar",
+        "https://t.me/trcredsquare"
+      ],
+      "sample_titles": [
+        "Telegram: View @estate_krasnodar",
+        "Telegram: View @trcredsquare"
+      ]
+    },
+    {
+      "domain": "tabris.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://tabris.ru/",
+        "https://tabris.ru/magaziny"
+      ],
+      "sample_titles": [
+        "tabris.ru",
+        "Актуальный график работы супермаркетов Табрис"
+      ]
+    },
+    {
+      "domain": "taplink.cc",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://taplink.cc/trcredsquare"
+      ],
+      "sample_titles": [
+        "Trcredsquare at Taplink"
+      ]
+    },
+    {
+      "domain": "tc-gorod.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://tc-gorod.ru/"
+      ],
+      "sample_titles": [
+        "TC Gorod |"
+      ]
+    },
+    {
+      "domain": "tcshops.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://tcshops.ru/torgoviy-centr/krasnaya-ploschad-krasnodar",
+        "https://tcshops.ru/torgoviy-centr/tsentr-goroda"
+      ],
+      "sample_titles": [
+        "tcshops.ru"
+      ]
+    },
+    {
+      "domain": "tdarsenal.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://tdarsenal.ru/"
+      ],
+      "sample_titles": [
+        "Купить строительные материалы и инструменты..."
+      ]
+    },
+    {
+      "domain": "tenchat.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://tenchat.ru/media/2708054-luchshiye-riyeltorskiye-agentstva-v-krasnodare-top10-reyting-2024"
+      ],
+      "sample_titles": [
+        "Лучшие риелторские"
+      ]
+    },
+    {
+      "domain": "termoland.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://termoland.ru/"
+      ],
+      "sample_titles": [
+        "Семейный городской курорт Termoland – отдых для всей семьи."
+      ]
+    },
+    {
+      "domain": "tk-mediaplaza.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "http://tk-mediaplaza.ru/"
+      ],
+      "sample_titles": [
+        "Медиаплаза —"
+      ]
+    },
+    {
+      "domain": "tochno.life",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 2.4,
+      "sample_urls": [
+        "https://tochno.life/",
+        "https://tochno.life/krasnodar/kvartiri"
+      ],
+      "sample_titles": [
+        "tochno.life/krasnodar/kvartiri",
+        "Купить квартиру от застройщика ГК ТОЧНО"
+      ]
+    },
+    {
+      "domain": "tocoskar.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://tocoskar.ru/%D0%BA%D0%BE%D0%BD%D1%82%D0%B0%D0%BA%D1%82%D1%8B"
+      ],
+      "sample_titles": [
+        "Контакты | ОСКАР"
+      ]
+    },
+    {
+      "domain": "topchik.me",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://topchik.me/krasnodar/torgovye-tsentry"
+      ],
+      "sample_titles": [
+        "Лучшие"
+      ]
+    },
+    {
+      "domain": "totadres.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://totadres.ru/krasnodar/address/21607/krasnaya_ulica/176_litera_3"
+      ],
+      "sample_titles": [
+        "Магазины в ТК"
+      ]
+    },
+    {
+      "domain": "tourister.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:aggregator_url_pattern"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://tourister.ru/world/europe/russia/city/krasnodar/shops/36899",
+        "https://tourister.ru/world/europe/russia/city/krasnodar/shops/37064"
+      ],
+      "sample_titles": [
+        "tourister.ru",
+        "Мегацентр «Красная площадь» в"
+      ]
+    },
+    {
+      "domain": "tpsre.ru",
+      "entity_types": [
+        "mall",
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity",
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://tpsre.ru/",
+        "https://tpsre.ru/project/trts-galereya-krasnodar"
+      ],
+      "sample_titles": [
+        "tpsre.ru",
+        "АО «ТПС"
+      ]
+    },
+    {
+      "domain": "trc-syr.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://trc-syr.ru/"
+      ],
+      "sample_titles": [
+        "trc-syr.ru"
+      ]
+    },
+    {
+      "domain": "trcroyal-city.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:low_serp_score"
+      ],
+      "max_score": 2.0,
+      "sample_urls": [
+        "https://trcroyal-city.ru/"
+      ],
+      "sample_titles": [
+        "trcroyal-city.ru"
+      ]
+    },
+    {
+      "domain": "tripadvisor.com",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:low_serp_score"
+      ],
+      "max_score": 2.0,
+      "sample_urls": [
+        "https://tripadvisor.com/Attractions-g298532-Activities-c26-t143-Krasnodar_Krasnodar_Krai_Southern_District.html"
+      ],
+      "sample_titles": [
+        "THE 15 BEST Krasnodar Shopping Malls (2026) - Tripadvisor"
+      ]
+    },
+    {
+      "domain": "tripadvisor.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://tripadvisor.ru/Attractions-g298532-Activities-c26-t143-Krasnodar_Krasnodar_Krai_Southern_District.html"
+      ],
+      "sample_titles": [
+        "tripadvisor.ru"
+      ]
+    },
+    {
+      "domain": "tvkrasnodar.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://tvkrasnodar.ru/"
+      ],
+      "sample_titles": [
+        "Телеканал"
+      ]
+    },
+    {
+      "domain": "tvoyadres.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://tvoyadres.ru/krasnodarskii-krai/krasnodar"
+      ],
+      "sample_titles": [
+        "Доска бесплатных объявлений"
+      ]
+    },
+    {
+      "domain": "tvoydom.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://tvoydom.ru/"
+      ],
+      "sample_titles": [
+        "Твой Дом: гипермаркет товаров для дома, дачи и ремонта"
+      ]
+    },
+    {
+      "domain": "uk-citymall.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:aggregator_url_pattern"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://uk-citymall.ru/objects/tts-strelka"
+      ],
+      "sample_titles": [
+        "uk-citymall.ru"
+      ]
+    },
+    {
+      "domain": "uslugi.yandex.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://uslugi.yandex.ru/35-krasnodar/category?text=%D1%80%D0%B8%D1%8D%D0%BB%D1%82%D0%BE%D1%80%D1%81%D0%BA%D0%B8%D0%B5+%D0%B0%D0%B3%D0%B5%D0%BD%D1%82%D1%81%D1%82%D0%B2%D0%B0+%D0%B0%D0%B4%D1%80%D0%B5%D1%81%D0%B0+%D0%B8+%D1%82%D0%B5%D0%BB%D0%B5%D1%84%D0%BE%D0%BD%D1%8B"
+      ],
+      "sample_titles": [
+        "uslugi.yandex.ru"
+      ]
+    },
+    {
+      "domain": "verno.pro",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://verno.pro/"
+      ],
+      "sample_titles": [
+        "verno.pro"
+      ]
+    },
+    {
+      "domain": "veronadom.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://veronadom.ru/"
+      ],
+      "sample_titles": [
+        "veronadom.ru"
+      ]
+    },
+    {
+      "domain": "vikonta-rielt.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://vikonta-rielt.ru/"
+      ],
+      "sample_titles": [
+        "Добро пожаловать в ВИКОНТА РИЭЛТ!"
+      ]
+    },
+    {
+      "domain": "vk.com",
+      "entity_types": [
+        "mall",
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт",
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity",
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 2.4,
+      "sample_urls": [
+        "https://vk.com/ayax.realty",
+        "https://vk.com/centergoroda",
+        "https://vk.com/etagi_com",
+        "https://vk.com/red_square_krd"
+      ],
+      "sample_titles": [
+        "vk.com",
+        "Аякс |",
+        "Мегацентр «Красная Площадь» | «Красная Площадь» – первый...",
+        "Этажи |"
+      ]
+    },
+    {
+      "domain": "vkbn.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 3.6,
+      "sample_urls": [
+        "https://vkbn.ru/"
+      ],
+      "sample_titles": [
+        "Купить квартиру в новостройке"
+      ]
+    },
+    {
+      "domain": "vladis.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://vladis.ru/krasnodar"
+      ],
+      "sample_titles": [
+        "vladis.ru"
+      ]
+    },
+    {
+      "domain": "w24.agency",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://w24.agency/"
+      ],
+      "sample_titles": [
+        "Онлайн-"
+      ]
+    },
+    {
+      "domain": "west-mall.com",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "homepage:homepage_negative_marker",
+        "serp:low_serp_score"
+      ],
+      "max_score": 2.0,
+      "sample_urls": [
+        "https://west-mall.com/"
+      ],
+      "sample_titles": [
+        "west-mall.com",
+        "ТРЦ West Mall - западный обход,"
+      ]
+    },
+    {
+      "domain": "wtckrasnodar.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://wtckrasnodar.ru/"
+      ],
+      "sample_titles": [
+        "ЦМТ-"
+      ]
+    },
+    {
+      "domain": "xn----7sba7amd7anf7gqa.xn--p1ai",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://xn----7sba7amd7anf7gqa.xn--p1ai/"
+      ],
+      "sample_titles": [
+        "Альта Риэлт —"
+      ]
+    },
+    {
+      "domain": "xn----8sba1anc9bg0b.xn--p1ai",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://xn----8sba1anc9bg0b.xn--p1ai/"
+      ],
+      "sample_titles": [
+        "xn----8sba1anc9bg0b.xn--p1ai"
+      ]
+    },
+    {
+      "domain": "xn----8sbnanqqtgbdq6k.xn--p1ai",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://xn----8sbnanqqtgbdq6k.xn--p1ai/"
+      ],
+      "sample_titles": [
+        "xn----8sbnanqqtgbdq6k.xn--p1ai"
+      ]
+    },
+    {
+      "domain": "xn----dtbfdhlba9adjjd2bcn.xn--p1ai",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://xn----dtbfdhlba9adjjd2bcn.xn--p1ai/rating/agency/krasnodar"
+      ],
+      "sample_titles": [
+        "Рейтинг лучших"
+      ]
+    },
+    {
+      "domain": "xn----ftbdnfkplatq3iva.com",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://xn----ftbdnfkplatq3iva.com/"
+      ],
+      "sample_titles": [
+        "xn----ftbdnfkplatq3iva.com"
+      ]
+    },
+    {
+      "domain": "xn--80aaefgddrebyl3aksddrdq6a6bo1ska.xn--p1ai",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://xn--80aaefgddrebyl3aksddrdq6a6bo1ska.xn--p1ai/"
+      ],
+      "sample_titles": [
+        "xn--80aaefgddrebyl3aksddrdq6a6bo1ska.xn--p1ai"
+      ]
+    },
+    {
+      "domain": "xn--80adju3ad.xn--p1acf",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://xn--80adju3ad.xn--p1acf/"
+      ],
+      "sample_titles": [
+        "сверка.рус"
+      ]
+    },
+    {
+      "domain": "xn--80aejrdrik9d.xn--p1ai",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://xn--80aejrdrik9d.xn--p1ai/"
+      ],
+      "sample_titles": [
+        "Команда Кравченко –"
+      ]
+    },
+    {
+      "domain": "xn--93-ilchqg1ahbofln.xn--p1ai",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://xn--93-ilchqg1ahbofln.xn--p1ai/"
+      ],
+      "sample_titles": [
+        "Все сделки с"
+      ]
+    },
+    {
+      "domain": "xn--c1adibssi7ii.com",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://xn--c1adibssi7ii.com/"
+      ],
+      "sample_titles": [
+        "xn--c1adibssi7ii.com"
+      ]
+    },
+    {
+      "domain": "xn--c1aeyckcn3a.xn--p1ai",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://xn--c1aeyckcn3a.xn--p1ai/"
+      ],
+      "sample_titles": [
+        "Городской центр ипотеки и"
+      ]
+    },
+    {
+      "domain": "yandex.ru",
+      "entity_types": [
+        "mall",
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт",
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "homepage:empty_homepage",
+        "serp:missing_agency_identity",
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://yandex.ru/images/search?text=%D0%9A%D1%80%D0%B0%D1%81%D0%BD%D0%BE%D0%B4%D0%B0%D1%80+%D1%82%D0%BE%D1%80%D0%B3%D0%BE%D0%B2%D1%8B%D0%B9+%D1%86%D0%B5%D0%BD%D1%82%D1%80+%D0%BE%D1%84%D0%B8%D1%86%D0%B8%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9+%D1%81%D0%B0%D0%B9%D1%82",
+        "https://yandex.ru/images/search?text=%D0%9A%D1%80%D0%B0%D1%81%D0%BD%D0%BE%D0%B4%D0%B0%D1%80+%D1%82%D1%80%D1%86+%D0%BE%D1%84%D0%B8%D1%86%D0%B8%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9+%D1%81%D0%B0%D0%B9%D1%82",
+        "https://yandex.ru/maps/35/krasnodar/category/real_estate_agency/184107503",
+        "https://yandex.ru/maps/35/krasnodar/search/%D0%90%D0%B3%D0%B5%D0%BD%D1%82%D1%81%D1%82%D0%B2%D0%B0%20%D0%BD%D0%B5%D0%B4%D0%B2%D0%B8%D0%B6%D0%B8%D0%BC%D0%BE%D1%81%D1%82%D0%B8",
+        "https://yandex.ru/maps/org/galereya_krasnodar/1492821787"
+      ],
+      "sample_titles": [
+        "yandex.ru",
+        "Галерея",
+        "Картинки по запросу \"Краснодар торговый центр официальный сайт\"",
+        "Картинки по запросу \"Краснодар трц официальный сайт\""
+      ]
+    },
+    {
+      "domain": "yapokupayu.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://yapokupayu.ru/blogs/post/torgovye-tsentry-v-krasnodare"
+      ],
+      "sample_titles": [
+        "yapokupayu.ru"
+      ]
+    },
+    {
+      "domain": "yell.ru",
+      "entity_types": [
+        "mall",
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт",
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity",
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://yell.ru/krasnodar/bizcenter/tsentr-goroda_2128",
+        "https://yell.ru/krasnodar/top/agentstva-nedvizhimosti",
+        "https://yell.ru/krasnodar/top/torgovyj-kompleks"
+      ],
+      "sample_titles": [
+        "yell.ru",
+        "Магазины и рестораны в"
+      ]
+    },
+    {
+      "domain": "youla.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт"
+      ],
+      "reasons": [
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://youla.ru/krasnodar/nedvijimost"
+      ],
+      "sample_titles": [
+        "youla.ru"
+      ]
+    },
+    {
+      "domain": "youtube.com",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_mall_identity"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://youtube.com/channel/UC8-PFIHio81dIOU8YSNJ2kg",
+        "https://youtube.com/channel/UCdphw0Gh9TuupiH1G36x3iA"
+      ],
+      "sample_titles": [
+        "GallerykOfficial - YouTube",
+        "youtube.com"
+      ]
+    },
+    {
+      "domain": "yuga.ru",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:low_serp_score"
+      ],
+      "max_score": 2.0,
+      "sample_urls": [
+        "https://yuga.ru/articles/society/8669.html"
+      ],
+      "sample_titles": [
+        "Как устроен OZ МОЛЛ. Экскурсия по самому большому... | Юга.ру"
+      ]
+    },
+    {
+      "domain": "yugrealt.ru",
+      "entity_types": [
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity"
+      ],
+      "max_score": 1.2,
+      "sample_urls": [
+        "https://yugrealt.ru/krasnodar"
+      ],
+      "sample_titles": [
+        "Купить"
+      ]
+    },
+    {
+      "domain": "zdanie.info",
+      "entity_types": [
+        "mall"
+      ],
+      "query_texts": [
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://zdanie.info/city/%D0%9A%D1%80%D0%B0%D1%81%D0%BD%D0%BE%D0%B4%D0%B0%D1%80/%D1%82%D0%BE%D1%80%D0%B3%D0%BE%D0%B2%D1%8B%D0%B5_%D1%86%D0%B5%D0%BD%D1%82%D1%80%D1%8B"
+      ],
+      "sample_titles": [
+        "zdanie.info"
+      ]
+    },
+    {
+      "domain": "zoon.ru",
+      "entity_types": [
+        "mall",
+        "real_estate_agency"
+      ],
+      "query_texts": [
+        "Краснодар агентство недвижимости официальный сайт",
+        "Краснодар риэлторское агентство официальный сайт",
+        "Краснодар торговый центр официальный сайт",
+        "Краснодар трц официальный сайт"
+      ],
+      "reasons": [
+        "serp:missing_agency_identity",
+        "serp:negative_marker"
+      ],
+      "max_score": 0.0,
+      "sample_urls": [
+        "https://zoon.ru/krasnodar/mall",
+        "https://zoon.ru/krasnodar/realty/type/agentstva_nedvizhimosti"
+      ],
+      "sample_titles": [
+        "zoon.ru",
+        "Лучшие"
+      ]
+    }
+  ]
+}

@@ -4,6 +4,10 @@ ALTER TABLE search_batch_logs
 ALTER TABLE search_batch_logs
     ADD COLUMN IF NOT EXISTS entity_scope TEXT;
 
+DROP VIEW IF EXISTS daily_summaries;
+DROP VIEW IF EXISTS top_domains;
+DROP VIEW IF EXISTS company_status_view;
+
 CREATE OR REPLACE VIEW daily_summaries AS
 SELECT
     date_trunc('day', scheduled_for) AS day,

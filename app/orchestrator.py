@@ -8,6 +8,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -190,7 +191,10 @@ class PipelineOrchestrator:
         self.contact_enricher = ContactEnricher(session_factory=self.session_factory)
         self.email_generator = EmailGenerator()
         self.email_sender = EmailSender(session_factory=self.session_factory)
+        self.email_generation_enabled = settings.email_generation_enabled
         self._token_provider = token_provider
+        self._results_processing_mode = settings.yandex_results_processing_mode
+        self._pipeline_tz = ZoneInfo(settings.timezone)
         self.sheet_settings = settings.sheet_sync
         self._sheet_service = None
         self._sheet_sync_interval = timedelta(minutes=max(1, self.sheet_settings.interval_minutes))
@@ -325,6 +329,13 @@ class PipelineOrchestrator:
             return scheduled
 
     def _poll_operations(self) -> int:
+        if not self._should_poll_operations_now():
+            LOGGER.info(
+                "Polling deferred-операций пропущен: YANDEX_RESULTS_PROCESSING_MODE=%s, сейчас вне ночного окна.",
+                self._results_processing_mode,
+            )
+            return 0
+
         with session_scope(self.session_factory) as session:
             rows = list(
                 session.execute(
@@ -376,6 +387,12 @@ class PipelineOrchestrator:
                         },
                     )
             return processed
+
+    def _should_poll_operations_now(self) -> bool:
+        if self._results_processing_mode != "night_only":
+            return True
+        now_local = datetime.now(timezone.utc).astimezone(self._pipeline_tz)
+        return 0 <= now_local.hour < 8
 
     def _handle_completed_operation(
         self,
@@ -441,6 +458,9 @@ class PipelineOrchestrator:
         return queued, sent
 
     def _queue_emails(self) -> int:
+        if not self.email_generation_enabled:
+            LOGGER.info("Генерация писем отключена настройкой EMAIL_GENERATION_ENABLED.")
+            return 0
         with session_scope(self.session_factory) as session:
             rows = list(
                 session.execute(

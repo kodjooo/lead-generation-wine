@@ -149,7 +149,12 @@ class Settings:
     yandex_sa_key_path: str | None
     yandex_sa_key_json: str | None
     yandex_enforce_night_window: bool
+    yandex_results_processing_mode: str
     openai_api_key: str
+    site_classification_llm_enabled: bool
+    site_classification_llm_model: str
+    site_classification_llm_min_confidence: float
+    email_generation_enabled: bool
     email_sending_enabled: bool
     redis_url: str
     database: DatabaseSettings
@@ -280,14 +285,24 @@ def get_settings() -> Settings:
         batch_tag=_env("SHEET_SYNC_BATCH_TAG") or None,
     )
 
+    timezone_name = _env("APP_TIMEZONE", "Europe/Moscow")
+    results_processing_mode = (_env("YANDEX_RESULTS_PROCESSING_MODE", "anytime") or "anytime").lower()
+    if results_processing_mode not in {"anytime", "night_only"}:
+        results_processing_mode = "anytime"
+
     return Settings(
-        timezone=_env("APP_TIMEZONE", "Europe/Moscow"),
+        timezone=timezone_name,
         yandex_folder_id=_env("YANDEX_CLOUD_FOLDER_ID"),
         yandex_iam_token=_env("YANDEX_CLOUD_IAM_TOKEN") or None,
         yandex_sa_key_path=_env("YANDEX_CLOUD_SA_KEY_FILE") or None,
         yandex_sa_key_json=_env("YANDEX_CLOUD_SA_KEY_JSON") or None,
         yandex_enforce_night_window=_env_bool("YANDEX_ENFORCE_NIGHT_WINDOW", True),
+        yandex_results_processing_mode=results_processing_mode,
         openai_api_key=_env("OPENAI_API_KEY"),
+        site_classification_llm_enabled=_env_bool("SITE_CLASSIFICATION_LLM_ENABLED", False),
+        site_classification_llm_model=_env("SITE_CLASSIFICATION_LLM_MODEL", "gpt-4.1-mini"),
+        site_classification_llm_min_confidence=float(_env("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.6")),
+        email_generation_enabled=_env_bool("EMAIL_GENERATION_ENABLED", True),
         email_sending_enabled=_env_bool("EMAIL_SENDING_ENABLED", True),
         redis_url=_env("REDIS_URL", "redis://redis:6379/0"),
         database=db,

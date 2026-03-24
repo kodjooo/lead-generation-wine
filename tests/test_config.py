@@ -17,6 +17,11 @@ def test_settings_loaded_from_env(monkeypatch) -> None:
     monkeypatch.setenv("SMTP_PORT", "2525")
     monkeypatch.setenv("YANDEX_CLOUD_IAM_TOKEN", "test-token")
     monkeypatch.setenv("YANDEX_CLOUD_FOLDER_ID", "folder-test")
+    monkeypatch.setenv("YANDEX_RESULTS_PROCESSING_MODE", "night_only")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_ENABLED", "true")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MODEL", "gpt-4.1-mini")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.75")
+    monkeypatch.setenv("EMAIL_GENERATION_ENABLED", "false")
     monkeypatch.setenv("GMAIL_SMTP_HOST", "smtp.test")
     monkeypatch.setenv("GMAIL_SMTP_PORT", "2525")
     monkeypatch.setenv("GMAIL_USER", "mailer@test")
@@ -65,5 +70,10 @@ def test_settings_loaded_from_env(monkeypatch) -> None:
     assert settings.routing.force_ru_domains == ("mail.ru", "rambler.ru")
     assert settings.yandex_folder_id == "folder-test"
     assert settings.yandex_iam_token == "test-token"
+    assert settings.yandex_results_processing_mode == "night_only"
+    assert settings.site_classification_llm_enabled is True
+    assert settings.site_classification_llm_model == "gpt-4.1-mini"
+    assert settings.site_classification_llm_min_confidence == 0.75
+    assert settings.email_generation_enabled is False
 
     get_settings.cache_clear()  # type: ignore[attr-defined]

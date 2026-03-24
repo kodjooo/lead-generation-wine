@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
+import random
 import re
+import time
 from dataclasses import dataclass
 from unicodedata import category
 from typing import Dict, Iterable, List, Optional, Set
@@ -22,6 +24,15 @@ from app.modules.utils.normalize import normalize_url
 
 LOGGER = logging.getLogger("app.enrich_contacts")
 EMAIL_RE = re.compile(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", re.IGNORECASE)
+BOT_CHALLENGE_MARKERS = (
+    "captcha",
+    "cloudflare",
+    "ddos-guard",
+    "access denied",
+    "verify you are human",
+    "robot check",
+    "подтвердите, что вы не робот",
+)
 
 
 @dataclass
@@ -63,11 +74,26 @@ class ContactEnricher:
         *,
         session_factory: Optional[sessionmaker[Session]] = None,
         timeout: float = 10.0,
+        min_delay_seconds: float = 0.35,
+        max_delay_seconds: float = 1.1,
+        max_retries: int = 2,
+        sleep_func=None,
     ) -> None:
         self.session_factory = session_factory or get_session_factory()
         self.timeout = timeout
+        self.min_delay_seconds = min_delay_seconds
+        self.max_delay_seconds = max_delay_seconds
+        self.max_retries = max_retries
+        self._sleep = sleep_func or time.sleep
         self.headers = {
-            "User-Agent": "LeadGenBot/1.0 (+https://example.com/bot-info)",
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            ),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.7,en;q=0.6",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
         }
 
     def enrich_company(
@@ -183,15 +209,60 @@ class ContactEnricher:
         return candidates
 
     def _fetch_html(self, url: str) -> str:
-        try:
-            response = httpx.get(url, timeout=self.timeout, headers=self.headers, follow_redirects=True)
-            if response.status_code >= 400:
-                LOGGER.debug("Страница %s вернула статус %s", url, response.status_code)
-                return ""
-            return response.text
-        except httpx.HTTPError as exc:  # noqa: PERF203
-            LOGGER.debug("Не удалось загрузить %s: %s", url, exc)
-            return ""
+        self._respect_delay()
+        last_error = None
+        for attempt in range(self.max_retries + 1):
+            try:
+                with httpx.Client(timeout=self.timeout, headers=self.headers, follow_redirects=True) as client:
+                    response = client.get(url)
+                if response.status_code in {403, 429, 503}:
+                    last_error = f"status_{response.status_code}"
+                    if self._is_bot_challenge(response.text):
+                        last_error = f"bot_challenge_{response.status_code}"
+                    if attempt < self.max_retries:
+                        self._backoff(attempt)
+                        continue
+                    LOGGER.debug("Страница %s заблокирована защитой или rate-limit (%s).", url, last_error)
+                    return ""
+                if response.status_code >= 400:
+                    LOGGER.debug("Страница %s вернула статус %s", url, response.status_code)
+                    return ""
+                if self._is_bot_challenge(response.text):
+                    last_error = "bot_challenge_body"
+                    if attempt < self.max_retries:
+                        self._backoff(attempt)
+                        continue
+                    LOGGER.debug("Страница %s вернула anti-bot challenge.", url)
+                    return ""
+                return response.text
+            except httpx.TimeoutException as exc:
+                last_error = str(exc)
+                if attempt < self.max_retries:
+                    self._backoff(attempt)
+                    continue
+            except httpx.HTTPError as exc:  # noqa: PERF203
+                last_error = str(exc)
+                if attempt < self.max_retries:
+                    self._backoff(attempt)
+                    continue
+        LOGGER.debug("Не удалось загрузить %s: %s", url, last_error)
+        return ""
+
+    def _respect_delay(self) -> None:
+        if self.max_delay_seconds <= 0:
+            return
+        delay = random.uniform(self.min_delay_seconds, self.max_delay_seconds)
+        if delay > 0:
+            self._sleep(delay)
+
+    def _backoff(self, attempt: int) -> None:
+        delay = min(2 ** attempt, 8)
+        self._sleep(delay)
+
+    @staticmethod
+    def _is_bot_challenge(text: str) -> bool:
+        lowered = (text or "").lower()
+        return any(marker in lowered for marker in BOT_CHALLENGE_MARKERS)
 
     def _extract_contacts_from_html(self, html: str, source_url: str) -> Iterable[ContactRecord]:
         soup = BeautifulSoup(html, "html.parser")

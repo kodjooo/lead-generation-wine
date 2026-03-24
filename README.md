@@ -51,9 +51,9 @@ services:
 
 1. **Подготовка данных.** Города заносятся в таблицу Google Sheets (например, лист `CITIES_INPUT`) со столбцами `city`, `country`, `batch_tag`, `search_malls`, `search_agencies`. Сервис `SheetSyncService` превращает каждую строку в набор стабильных поисковых запросов через `QueryGenerator`: для каждого города формируются отдельные deferred-запросы для сайтов ТЦ и агентств недвижимости, выбирается регион (`lr`), рассчитывается ночное окно и время запуска, а в `serp_queries.metadata` сохраняется тип сущности.
 2. **Планирование и Yandex Search.** Контейнер `scheduler` берёт pending-запросы, проверяет ночное окно и квоты, затем через `YandexDeferredClient` создаёт deferred-операции (таблица `serp_operations`). Клиент автоматически обновляет IAM токен, следит за rate-limit и при необходимости откладывает выполнение. В течение ночи `scheduler` и `app` опрашивают операции (`get_operation`), пока не получат Base64-выдачу.
-3. **Парсинг SERP.** Когда операция завершена, `SerpIngestService` декодирует XML, нормализует URL/домены, фильтрует запрещённые домены и затем проверяет, похож ли сайт на официальный сайт ТЦ или агентства недвижимости. В БД сохраняются только релевантные домены; тип сущности сохраняется в `companies.industry`, а город-источник в `companies.region`.
+3. **Парсинг SERP.** Когда операция завершена, `SerpIngestService` декодирует XML, нормализует URL/домены, фильтрует запрещённые домены, отбрасывает URL-паттерны агрегаторов и затем подтверждает кандидата по контенту главной страницы. Для спорных кандидатов после homepage-проверки может вызываться OpenAI fallback, который одним verdict уточняет тип сайта (`official_mall_site`, `mall_tenant_site`, `official_real_estate_agency_site`, `developer_site` и т.д.) и фактический город. В БД сохраняются только релевантные домены; тип сущности сохраняется в `companies.industry`, а город-источник в `companies.region`.
 4. **Дедупликация компаний.** `DeduplicationService` устраняет повторы на уровне домена и исключает дубликаты из дальнейшего пайплайна.
-5. **Обогащение контактов.** Воркер `worker` и оркестратор выбирают компании без контактов. `ContactEnricher` строит список страниц (`/`, `/contact`, `/kontakty`, `/arenda`, `/leasing` и др.), скачивает HTML, сохраняет фрагмент главной страницы в `companies.attributes.homepage_excerpt` и извлекает email как из `mailto:`, так и из текстового контента страницы.
+5. **Обогащение контактов.** Воркер `worker` и оркестратор выбирают компании без контактов. `ContactEnricher` строит список страниц (`/`, `/contact`, `/kontakty`, `/arenda`, `/leasing` и др.), использует браузерные заголовки, небольшие паузы между запросами и retry/backoff для базового обхода anti-bot защиты, затем сохраняет фрагмент главной страницы в `companies.attributes.homepage_excerpt` и извлекает email как из `mailto:`, так и из текстового контента страницы.
 6. **Генерация писем.** Для каждого email без рассылки оркестратор собирает `CompanyBrief` и `OfferBrief`, затем `EmailGenerator` генерирует разные письма для `mall` и `real_estate_agency`. При отсутствии ключа OpenAI используется fallback-шаблон.
 8. **Доставка.** Во время рабочего окна сервис выбирает `scheduled` записи с просроченным `scheduled_for`, повторно проверяет opt-out и валидирует email (пустые строки и номера телефонов помечаются `invalid_email` и не попадают к SMTP). Для валидных адресов выбирается канал (Gmail или Яндекс), выполняется отправка и фиксируются `sent_at`, `message_id`, `metadata.route`. Повторы исключены: отбор идёт с блокировкой строк (SKIP LOCKED).
 9. **Статусы компаний.** После обхода контактов компания получает `contacts_ready`. Если email не найден, записывается `contacts_not_found`, и оркестратор её больше не обрабатывает.
@@ -208,6 +208,9 @@ docker compose run --rm app --mode once
 
   Ключ храните в Secret Manager или CI и не коммитьте в репозиторий.
 - `YANDEX_ENFORCE_NIGHT_WINDOW` — если `true`, отправка запросов выполняется только в ночное окно; установите `false` для дневных тестов.
+- `YANDEX_RESULTS_PROCESSING_MODE` — режим обработки готовых deferred-результатов:
+  `anytime` — polling и ingest можно выполнять в любое время;
+  `night_only` — polling и ingest выполняются только ночью по `APP_TIMEZONE`.
 
 ### Google Sheets
 
@@ -226,8 +229,12 @@ docker compose run --rm app --mode once
   ```
 - `GMAIL_SMTP_HOST`, `GMAIL_SMTP_PORT`, `GMAIL_SMTP_TLS`, `GMAIL_USER`, `GMAIL_PASS`, `GMAIL_FROM` — отправка через Gmail (App Password из Google Account → Security → App Passwords).
 - `YANDEX_SMTP_HOST`, `YANDEX_SMTP_PORT`, `YANDEX_SMTP_SSL`, `YANDEX_USER`, `YANDEX_PASS`, `YANDEX_FROM` — отправка через личный аккаунт Яндекс (пароль приложения в mail.yandex.ru → Настройки → Пароли приложений). Если канал не используется, оставьте значения пустыми.
-- `EMAIL_SENDING_ENABLED` — если `false`, письма только сохраняются в `outreach_messages` со статусом `scheduled`, реальная отправка отключена.
+- `EMAIL_GENERATION_ENABLED` — если `false`, оркестратор не будет генерировать и ставить письма в `outreach_messages`.
+- `EMAIL_SENDING_ENABLED` — если `false`, письма могут сохраняться в `outreach_messages` со статусом `scheduled`, но реальная отправка отключена.
 - `OPENAI_API_KEY` — ключ OpenAI для генерации персонализированных писем.
+- `SITE_CLASSIFICATION_LLM_ENABLED` — включает OpenAI fallback для спорных кандидатов после homepage-проверки.
+- `SITE_CLASSIFICATION_LLM_MODEL` — модель OpenAI для fallback-классификации типа сайта и фактического города.
+- `SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE` — минимальная уверенность fallback-ответа, после которой verdict используется для финального решения.
 
 ## Синхронизация запросов из Google Sheets
 
