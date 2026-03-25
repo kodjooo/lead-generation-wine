@@ -8,3 +8,4 @@ pycryptodome>=3.19
 gspread>=5.10
 google-auth>=2.23
 dnspython>=2.6
+playwright>=1.52

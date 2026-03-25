@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 import re
+import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 from xml.etree import ElementTree as ET
@@ -21,6 +24,8 @@ from app.modules.utils.normalize import clean_snippet, normalize_domain, normali
 
 LOGGER = logging.getLogger("app.serp_ingest")
 OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
+OPENAI_LLM_TIMEOUT_SECONDS = 45.0
+OPENAI_LLM_MAX_ATTEMPTS = 3
 
 EXCLUDED_DOMAIN_SUFFIXES = tuple(sorted(EXCLUDED_DOMAINS))
 COMMON_NEGATIVE_MARKERS = (
@@ -37,6 +42,17 @@ COMMON_NEGATIVE_MARKERS = (
     "подборка",
     "лучшие",
     "список",
+)
+AGENCY_HOMEPAGE_NEGATIVE_MARKERS = (
+    "рейтинг агентств",
+    "лучшие агентства",
+    "список агентств",
+    "каталог агентств",
+    "агрегатор недвижимости",
+    "база объявлений",
+    "разместить объявление",
+    "доска объявлений",
+    "marketplace",
 )
 AGGREGATOR_URL_PATTERNS = (
     "/catalog",
@@ -110,6 +126,13 @@ AGENCY_OPERATIONAL_MARKERS = (
     "оставить заявку",
     "подобрать",
     "контакты",
+    "вторич",
+    "специалист по недвижимости",
+    "эксперт по недвижимости",
+    "покупка недвижимости",
+    "продажа недвижимости",
+    "сдать недвижимость",
+    "снять недвижимость",
 )
 AGENCY_NEGATIVE_MARKERS = (
     "лучшие агентства",
@@ -154,7 +177,48 @@ AGENCY_DOMAIN_MARKERS = (
     "nedvizh",
     "kvart",
     "realt",
+    "an-",
 )
+AGENCY_BRAND_MARKERS = (
+    "этажи",
+    "аякс",
+    "каян",
+    "владис",
+    "century 21",
+    "гауди риелт",
+    "смартриэлт",
+    "смарт риэлт",
+    "виконта риэлт",
+    "центр юг",
+    "югреалт",
+    "новометр",
+)
+AGENCY_BRAND_DOMAIN_MARKERS = (
+    "etagi.com",
+    "kayan.ru",
+    "vladis.ru",
+    "century21.ru",
+    "novometr23.ru",
+    "smartrielt.ru",
+    "gaudirielt.ru",
+    "vikonta-rielt.ru",
+    "centrug.ru",
+    "yugrealt.ru",
+    "au-rielt.ru",
+    "can-ug.ru",
+    "estate-krd.ru",
+)
+AGENCY_EXCLUDED_DOMAINS = {
+    "gk-europeya.ru",
+    "kp.ru",
+    "krasnodar-novostroy.ru",
+    "krdestate.ru",
+    "kubannovostroi.ru",
+    "m2.ru",
+    "mnl23.ru",
+    "moreon-invest.ru",
+    "tochno.life",
+}
 KNOWN_RU_CITIES = (
     "Москва",
     "Санкт-Петербург",
@@ -190,6 +254,16 @@ def _is_excluded_domain(domain: str) -> bool:
     )
 
 
+def _is_entity_excluded_domain(domain: str, entity_type: str | None) -> bool:
+    domain_lower = (domain or "").lower()
+    if entity_type == "real_estate_agency":
+        return any(
+            domain_lower == excluded or domain_lower.endswith(f".{excluded}")
+            for excluded in AGENCY_EXCLUDED_DOMAINS
+        )
+    return False
+
+
 def _normalize_text(text: str | None) -> str:
     return clean_snippet(text).lower()
 
@@ -200,6 +274,11 @@ def _contains_any(haystack: str, needles: tuple[str, ...]) -> bool:
 
 def _score_hits(haystack: str, needles: tuple[str, ...], weight: float) -> float:
     return sum(weight for needle in needles if needle in haystack)
+
+
+def _domain_has_any(domain: str, markers: tuple[str, ...]) -> bool:
+    haystack = (domain or "").lower()
+    return any(marker in haystack for marker in markers)
 
 
 @dataclass
@@ -247,6 +326,28 @@ class SiteClassificationDecision:
     reason: Optional[str]
 
 
+@dataclass
+class ScreenedCandidate:
+    """Кандидат, полностью проверенный до записи в БД."""
+
+    document: SerpDocument
+    serp_decision: ScreeningDecision
+    homepage_decision: ScreeningDecision
+    city_detection: CityDetection
+    llm_classification: SiteClassificationDecision | None
+
+
+AGENCY_LLM_REVIEW_SCORE_THRESHOLD = 9.0
+
+
+def _strip_code_fences(content: str) -> str:
+    normalized = content.strip()
+    if normalized.startswith("```") and normalized.endswith("```"):
+        normalized = re.sub(r"^```[a-zA-Z0-9_-]*\n?", "", normalized)
+        normalized = re.sub(r"\n?```$", "", normalized)
+    return normalized.strip()
+
+
 def evaluate_serp_document(document: "SerpDocument", expected_entity_type: str | None) -> ScreeningDecision:
     """Предварительно оценивает документ по данным SERP."""
     title = _normalize_text(document.title)
@@ -282,7 +383,17 @@ def evaluate_serp_document(document: "SerpDocument", expected_entity_type: str |
         negative_score = _score_hits(haystack, AGENCY_NEGATIVE_MARKERS, 3.5)
         developer_score = _score_hits(haystack, AGENCY_DEVELOPER_MARKERS, 2.5)
         domain_score = _score_hits(domain, AGENCY_DOMAIN_MARKERS, 1.0)
-        score += identity_score + operational_score + domain_score - negative_score - developer_score
+        brand_score = _score_hits(haystack, AGENCY_BRAND_MARKERS, 2.0)
+        brand_domain_score = 3.0 if _domain_has_any(domain, AGENCY_BRAND_DOMAIN_MARKERS) else 0.0
+        score += (
+            identity_score
+            + operational_score
+            + domain_score
+            + brand_score
+            + brand_domain_score
+            - negative_score
+            - developer_score
+        )
         if identity_score <= 0 or score < 2.5:
             return ScreeningDecision(True, round(score, 2), "serp_needs_homepage_verification", True)
         return ScreeningDecision(True, round(score, 2), None)
@@ -290,12 +401,15 @@ def evaluate_serp_document(document: "SerpDocument", expected_entity_type: str |
     return ScreeningDecision(False, 0.0, "unknown_entity_type")
 
 
-def evaluate_homepage_content(content: str, entity_type: str | None) -> ScreeningDecision:
+def evaluate_homepage_content(content: str, entity_type: str | None, *, domain: str | None = None) -> ScreeningDecision:
     """Финально подтверждает, что домен похож на официальный сайт нужного типа."""
     haystack = _normalize_text(content)
     if not haystack:
         return ScreeningDecision(False, 0.0, "empty_homepage")
-    if _contains_any(haystack, COMMON_NEGATIVE_MARKERS):
+    if entity_type == "real_estate_agency":
+        if _contains_any(haystack, AGENCY_HOMEPAGE_NEGATIVE_MARKERS):
+            return ScreeningDecision(False, 0.0, "homepage_negative_marker")
+    elif _contains_any(haystack, COMMON_NEGATIVE_MARKERS):
         return ScreeningDecision(False, 0.0, "homepage_negative_marker")
 
     if entity_type == "mall":
@@ -316,9 +430,15 @@ def evaluate_homepage_content(content: str, entity_type: str | None) -> Screenin
         operational_score = _score_hits(haystack, AGENCY_OPERATIONAL_MARKERS, 1.5)
         negative_score = _score_hits(haystack, AGENCY_NEGATIVE_MARKERS, 4.0)
         developer_score = _score_hits(haystack, AGENCY_DEVELOPER_MARKERS, 3.0)
-        score = identity_score + operational_score - negative_score - developer_score
+        domain_haystack = _normalize_text(domain or "")
+        domain_score = _score_hits(domain_haystack, AGENCY_DOMAIN_MARKERS, 1.0)
+        brand_score = _score_hits(haystack, AGENCY_BRAND_MARKERS, 2.0)
+        brand_domain_score = 3.0 if _domain_has_any(domain_haystack, AGENCY_BRAND_DOMAIN_MARKERS) else 0.0
+        score = identity_score + operational_score + domain_score + brand_score + brand_domain_score - negative_score - developer_score
         if developer_score >= 3.0 and identity_score < 2.0:
             return ScreeningDecision(False, score, "homepage_developer_site")
+        if developer_score < 3.0 and operational_score >= 3.0 and (brand_score >= 2.0 or brand_domain_score > 0 or domain_score >= 1.0):
+            return ScreeningDecision(True, round(score, 2), "homepage_brand_agency")
         if identity_score < 2.0:
             return ScreeningDecision(False, score, "homepage_missing_agency_identity")
         if operational_score < 1.5 and score < 3.5:
@@ -378,6 +498,30 @@ def detect_actual_city(
     if best_score <= 0:
         return CityDetection(None, 0.0, None)
     return CityDetection(best_city, round(best_score, 2), best_source)
+
+
+def _llm_guidance_for_entity_type(expected_entity_type: str | None) -> str:
+    if expected_entity_type == "real_estate_agency":
+        return (
+            "Для ниши real_estate_agency признай сайт официальным агентством недвижимости только если есть "
+            "сильные признаки посреднических услуг: агенты или риэлторы, подбор/покупка/продажа/аренда "
+            "недвижимости для клиентов, ипотека, сопровождение сделки, каталог собственных объектов агентства, "
+            "офисы и контакты агентства. Не признавай агентством сайты застройщиков, жилых комплексов, "
+            "витрины новостроек от девелопера, классифайды, каталоги агентств, рейтинги, медиа и статьи. "
+            "Если домен относится к сетевому бренду агентств, филиалу или региональному поддомену, это допустимо. "
+            "Город определяй по адресу офиса, контактам, локальному поддомену/пути, а не по списку городов сети."
+        )
+    if expected_entity_type == "mall":
+        return (
+            "Для ниши mall признай сайт официальным торговым центром только если сайт описывает сам ТЦ/ТРЦ: "
+            "магазины, арендаторы, аренда площадей, схема, как добраться, время работы, контакты центра. "
+            "Не признавай mall сайтом арендатора, магазина, детского центра, ресторана, афиши, каталога или статьи. "
+            "Город определяй по адресу и контактам конкретного объекта, а не по списку филиалов."
+        )
+    return (
+        "Определи тип сайта и фактический город только по переданному контексту. "
+        "Не путай локальный объект с каталогом, медиа или агрегатором."
+    )
 
 
 def parse_serp_xml(xml_payload: bytes) -> List[SerpDocument]:
@@ -521,6 +665,9 @@ class SerpIngestService:
         self._homepage_cache: Dict[tuple[str, str], ScreeningDecision] = {}
         self._homepage_content_cache: Dict[str, str] = {}
         self._llm_classification_cache: Dict[tuple[str, str, str], SiteClassificationDecision] = {}
+        self._http_client: httpx.Client | None = None
+        self._http_client_lock = threading.Lock()
+        self._max_screening_workers = 8
 
     def ingest(
         self,
@@ -539,107 +686,152 @@ class SerpIngestService:
         query_metadata = query_metadata or {}
         entity_type = query_metadata.get("entity_type")
         city = query_metadata.get("city")
+        candidates: List[tuple[SerpDocument, ScreeningDecision]] = []
+        for document in documents:
+            if _is_excluded_domain(document.domain) or _is_entity_excluded_domain(document.domain, entity_type):
+                continue
+
+            serp_decision = evaluate_serp_document(document, entity_type)
+            if not serp_decision.is_relevant:
+                LOGGER.debug(
+                    "Документ %s отброшен на этапе SERP: entity_type=%s reason=%s",
+                    document.url,
+                    entity_type,
+                    serp_decision.reason,
+                )
+                continue
+            candidates.append((document, serp_decision))
+
+        screened_candidates = self._screen_candidates(candidates, entity_type=entity_type, city=city)
         inserted: List[str] = []
         with session_scope(self.session_factory) as session:
-            for document in documents:
-                if _is_excluded_domain(document.domain):
-                    continue
-
-                serp_decision = evaluate_serp_document(document, entity_type)
-                if not serp_decision.is_relevant:
-                    LOGGER.debug(
-                        "Документ %s отброшен на этапе SERP: entity_type=%s reason=%s",
-                        document.url,
-                        entity_type,
-                        serp_decision.reason,
-                    )
-                    continue
-
-                homepage_content = self._get_homepage_content(document.domain)
-                homepage_decision = self._verify_candidate_homepage(document.domain, entity_type)
-                if not homepage_decision.is_relevant:
-                    LOGGER.debug(
-                        "Документ %s отброшен на этапе homepage verification: entity_type=%s reason=%s",
-                        document.url,
-                        entity_type,
-                        homepage_decision.reason,
-                    )
-                    continue
-
-                city_detection = detect_actual_city(
-                    expected_city=city,
-                    document=document,
-                    homepage_content=homepage_content,
-                )
-                llm_classification = self._maybe_classify_site_with_llm(
-                    expected_city=city,
-                    expected_entity_type=entity_type,
-                    document=document,
-                    homepage_content=homepage_content,
-                    detection=city_detection,
-                )
-                if llm_classification and not self._is_llm_verdict_accepted(entity_type, llm_classification.site_verdict):
-                    LOGGER.debug(
-                        "Документ %s отброшен по LLM-классификации: entity_type=%s verdict=%s confidence=%s",
-                        document.url,
-                        entity_type,
-                        llm_classification.site_verdict,
-                        llm_classification.confidence,
-                    )
-                    continue
-                if llm_classification and llm_classification.detected_city:
-                    city_detection = CityDetection(
-                        detected_city=llm_classification.detected_city,
-                        score=round(llm_classification.confidence * 5.0, 2),
-                        source="llm",
-                    )
-                final_score = round((serp_decision.score + homepage_decision.score) / 2.0, 2)
+            for candidate in screened_candidates:
+                final_score = round((candidate.serp_decision.score + candidate.homepage_decision.score) / 2.0, 2)
                 result_id = self._upsert_result(
                     session,
                     operation_db_id,
-                    document,
+                    candidate.document,
                     entity_type=entity_type,
                     city=city,
-                    city_detection=city_detection,
+                    city_detection=candidate.city_detection,
                     relevance_score=final_score,
-                    screening_reason=homepage_decision.reason or serp_decision.reason,
-                    llm_classification=llm_classification,
+                    screening_reason=candidate.homepage_decision.reason or candidate.serp_decision.reason,
+                    llm_classification=candidate.llm_classification,
                     yandex_operation_id=yandex_operation_id,
                 )
                 inserted.append(result_id)
                 self._ensure_company(
                     session,
-                    document,
+                    candidate.document,
                     entity_type=entity_type,
                     city=city,
-                    city_detection=city_detection,
+                    city_detection=candidate.city_detection,
                     relevance_score=final_score,
-                    llm_classification=llm_classification,
+                    llm_classification=candidate.llm_classification,
                 )
         return inserted
 
-    def _verify_candidate_homepage(self, domain: str, entity_type: Optional[str]) -> ScreeningDecision:
+    def _screen_candidates(
+        self,
+        candidates: List[tuple[SerpDocument, ScreeningDecision]],
+        *,
+        entity_type: str | None,
+        city: str | None,
+    ) -> List[ScreenedCandidate]:
+        if not candidates:
+            return []
+        max_workers = min(self._max_screening_workers, len(candidates))
+        if max_workers <= 1:
+            result = [self._screen_single_candidate(item, entity_type=entity_type, city=city) for item in candidates]
+            return [item for item in result if item is not None]
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            result = list(
+                executor.map(
+                    lambda item: self._screen_single_candidate(item, entity_type=entity_type, city=city),
+                    candidates,
+                )
+            )
+        return [item for item in result if item is not None]
+
+    def _screen_single_candidate(
+        self,
+        candidate: tuple[SerpDocument, ScreeningDecision],
+        *,
+        entity_type: str | None,
+        city: str | None,
+    ) -> ScreenedCandidate | None:
+        document, serp_decision = candidate
+        homepage_content = self._get_homepage_content(document.domain)
+        homepage_decision = self._evaluate_homepage(document.domain, entity_type, homepage_content)
+        if not homepage_decision.is_relevant:
+            LOGGER.debug(
+                "Документ %s отброшен на этапе homepage verification: entity_type=%s reason=%s",
+                document.url,
+                entity_type,
+                homepage_decision.reason,
+            )
+            return None
+
+        city_detection = detect_actual_city(
+            expected_city=city,
+            document=document,
+            homepage_content=homepage_content,
+        )
+        llm_classification = self._maybe_classify_site_with_llm(
+            expected_city=city,
+            expected_entity_type=entity_type,
+            document=document,
+            homepage_content=homepage_content,
+            detection=city_detection,
+            serp_decision=serp_decision,
+            homepage_decision=homepage_decision,
+        )
+        if llm_classification and not self._is_llm_verdict_accepted(entity_type, llm_classification.site_verdict):
+            LOGGER.debug(
+                "Документ %s отброшен по LLM-классификации: entity_type=%s verdict=%s confidence=%s",
+                document.url,
+                entity_type,
+                llm_classification.site_verdict,
+                llm_classification.confidence,
+            )
+            return None
+        if llm_classification and llm_classification.detected_city:
+            city_detection = CityDetection(
+                detected_city=llm_classification.detected_city,
+                score=round(llm_classification.confidence * 5.0, 2),
+                source="llm",
+            )
+        return ScreenedCandidate(
+            document=document,
+            serp_decision=serp_decision,
+            homepage_decision=homepage_decision,
+            city_detection=city_detection,
+            llm_classification=llm_classification,
+        )
+
+    def _evaluate_homepage(
+        self,
+        domain: str,
+        entity_type: Optional[str],
+        homepage_content: str,
+    ) -> ScreeningDecision:
         cache_key = (domain, entity_type or "")
         if cache_key in self._homepage_cache:
             return self._homepage_cache[cache_key]
 
-        homepage_url = normalize_url(f"https://{domain}")
-        html = self._fetch_homepage(homepage_url)
-        if not html:
-            http_url = normalize_url(f"http://{domain}")
-            html = self._fetch_homepage(http_url)
-        if not html:
+        if not homepage_content:
             decision = ScreeningDecision(False, 0.0, "homepage_unreachable")
             self._homepage_cache[cache_key] = decision
             return decision
 
-        soup = BeautifulSoup(html, "html.parser")
-        title = soup.title.get_text(" ", strip=True) if soup.title else ""
-        text_content = soup.get_text(" ", strip=True)
-        content = " ".join(part for part in (title, text_content[:12000]) if part)
-        decision = evaluate_homepage_content(content, entity_type)
+        decision = evaluate_homepage_content(homepage_content, entity_type, domain=domain)
         self._homepage_cache[cache_key] = decision
         return decision
+
+    def _verify_candidate_homepage(self, domain: str, entity_type: Optional[str]) -> ScreeningDecision:
+        homepage_content = self._get_homepage_content(domain)
+        return self._evaluate_homepage(domain, entity_type, homepage_content)
 
     def _get_homepage_content(self, domain: str) -> str:
         if domain in self._homepage_content_cache:
@@ -663,13 +855,25 @@ class SerpIngestService:
 
     def _fetch_homepage(self, url: str) -> str:
         try:
-            with httpx.Client(timeout=self.timeout, headers=self.headers, follow_redirects=True) as client:
-                response = client.get(url)
+            client = self._get_http_client()
+            response = client.get(url)
             if response.status_code >= 400:
                 return ""
             return response.text
         except httpx.HTTPError:
             return ""
+
+    def _get_http_client(self) -> httpx.Client:
+        if self._http_client is not None:
+            return self._http_client
+        with self._http_client_lock:
+            if self._http_client is None:
+                self._http_client = httpx.Client(
+                    timeout=self.timeout,
+                    headers=self.headers,
+                    follow_redirects=True,
+                )
+        return self._http_client
 
     def _maybe_classify_site_with_llm(
         self,
@@ -679,12 +883,20 @@ class SerpIngestService:
         document: SerpDocument,
         homepage_content: str,
         detection: CityDetection,
+        serp_decision: ScreeningDecision | None = None,
+        homepage_decision: ScreeningDecision | None = None,
     ) -> SiteClassificationDecision | None:
         if not self.settings.site_classification_llm_enabled:
             return None
         if not self.settings.openai_api_key:
             return None
-        if detection.detected_city and detection.score >= 3.0:
+        if not self._should_use_llm_classification(
+            expected_city=expected_city,
+            expected_entity_type=expected_entity_type,
+            detection=detection,
+            serp_decision=serp_decision,
+            homepage_decision=homepage_decision,
+        ):
             return None
         cache_key = (
             expected_entity_type or "",
@@ -699,11 +911,40 @@ class SerpIngestService:
             expected_entity_type=expected_entity_type,
             document=document,
             homepage_content=homepage_content,
+            serp_decision=serp_decision,
+            homepage_decision=homepage_decision,
         )
         self._llm_classification_cache[cache_key] = llm_decision
         if llm_decision.confidence < self.settings.site_classification_llm_min_confidence:
             return None
         return llm_decision
+
+    def _should_use_llm_classification(
+        self,
+        *,
+        expected_city: str | None,
+        expected_entity_type: str | None,
+        detection: CityDetection,
+        serp_decision: ScreeningDecision | None,
+        homepage_decision: ScreeningDecision | None,
+    ) -> bool:
+        if not detection.detected_city or detection.score < 3.0:
+            return True
+
+        if expected_city and detection.detected_city and _normalize_text(expected_city) != _normalize_text(detection.detected_city):
+            return True
+
+        if expected_entity_type == "real_estate_agency":
+            if homepage_decision is None:
+                return True
+            if homepage_decision.reason is not None:
+                return True
+            if homepage_decision.score < AGENCY_LLM_REVIEW_SCORE_THRESHOLD:
+                return True
+            if serp_decision and serp_decision.requires_verification:
+                return True
+
+        return False
 
     def _request_site_classification_llm(
         self,
@@ -712,10 +953,11 @@ class SerpIngestService:
         expected_entity_type: str | None,
         document: SerpDocument,
         homepage_content: str,
+        serp_decision: ScreeningDecision | None = None,
+        homepage_decision: ScreeningDecision | None = None,
     ) -> SiteClassificationDecision:
         payload = {
             "model": self.settings.site_classification_llm_model,
-            "temperature": 0,
             "response_format": {
                 "type": "json_schema",
                 "json_schema": {
@@ -752,7 +994,8 @@ class SerpIngestService:
                         "Сайт может быть официальным сайтом торгового центра, сайтом арендатора внутри ТЦ, "
                         "официальным сайтом агентства недвижимости, сайтом застройщика, агрегатором, медиа-страницей "
                         "или неопределённым случаем. Если уверенности нет, верни verdict=uncertain и detected_city=null. "
-                        "Опирайся только на переданный контекст."
+                        "Опирайся только на переданный контекст. "
+                        f"{_llm_guidance_for_entity_type(expected_entity_type)}"
                     ),
                 },
                 {
@@ -761,10 +1004,21 @@ class SerpIngestService:
                         {
                             "expected_city": expected_city,
                             "expected_entity_type": expected_entity_type,
+                            "domain": document.domain,
                             "serp": {
                                 "title": document.title,
                                 "snippet": document.snippet,
                                 "url": document.url,
+                                "position": document.position,
+                            },
+                            "serp_screening": {
+                                "score": serp_decision.score if serp_decision else None,
+                                "reason": serp_decision.reason if serp_decision else None,
+                                "requires_verification": serp_decision.requires_verification if serp_decision else None,
+                            },
+                            "homepage_screening": {
+                                "score": homepage_decision.score if homepage_decision else None,
+                                "reason": homepage_decision.reason if homepage_decision else None,
                             },
                             "homepage_excerpt": homepage_content[:5000],
                         },
@@ -777,30 +1031,46 @@ class SerpIngestService:
             "Authorization": f"Bearer {self.settings.openai_api_key}",
             "Content-Type": "application/json",
         }
-        try:
-            with httpx.Client(timeout=self.timeout) as client:
-                response = client.post(OPENAI_CHAT_COMPLETIONS_URL, headers=headers, json=payload)
-                response.raise_for_status()
-            body = response.json()
-            content = body["choices"][0]["message"]["content"]
-            parsed = json.loads(content)
-            verdict = parsed.get("site_verdict") or None
-            city = parsed.get("detected_city") or None
-            confidence = float(parsed.get("confidence") or 0.0)
-            reason = parsed.get("reason") or None
-            return SiteClassificationDecision(
-                site_verdict=verdict,
-                detected_city=city,
-                confidence=confidence,
-                reason=reason,
-            )
-        except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError):
-            return SiteClassificationDecision(
-                site_verdict=None,
-                detected_city=None,
-                confidence=0.0,
-                reason=None,
-            )
+        last_error: str | None = None
+        for attempt in range(1, OPENAI_LLM_MAX_ATTEMPTS + 1):
+            try:
+                with httpx.Client(timeout=max(self.timeout, OPENAI_LLM_TIMEOUT_SECONDS)) as client:
+                    response = client.post(OPENAI_CHAT_COMPLETIONS_URL, headers=headers, json=payload)
+                    response.raise_for_status()
+                body = response.json()
+                content = _strip_code_fences(body["choices"][0]["message"]["content"])
+                parsed = json.loads(content)
+                verdict = parsed.get("site_verdict") or None
+                city = parsed.get("detected_city") or None
+                confidence = float(parsed.get("confidence") or 0.0)
+                reason = parsed.get("reason") or None
+                return SiteClassificationDecision(
+                    site_verdict=verdict,
+                    detected_city=city,
+                    confidence=confidence,
+                    reason=reason,
+                )
+            except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+                last_error = str(exc)
+                if isinstance(exc, httpx.HTTPStatusError):
+                    last_error = f"{exc} body={exc.response.text[:500]}"
+                if attempt < OPENAI_LLM_MAX_ATTEMPTS:
+                    time.sleep(float(attempt))
+                    continue
+
+        LOGGER.warning(
+            "LLM classification failed for domain=%s entity_type=%s after %s attempts: %s",
+            document.domain,
+            expected_entity_type,
+            OPENAI_LLM_MAX_ATTEMPTS,
+            last_error,
+        )
+        return SiteClassificationDecision(
+            site_verdict=None,
+            detected_city=None,
+            confidence=0.0,
+            reason=None,
+        )
 
     def _is_llm_verdict_accepted(self, entity_type: str | None, verdict: str | None) -> bool:
         if not verdict:

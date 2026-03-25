@@ -154,6 +154,8 @@ class Settings:
     site_classification_llm_enabled: bool
     site_classification_llm_model: str
     site_classification_llm_min_confidence: float
+    contact_enrich_playwright_enabled: bool
+    contact_enrich_playwright_timeout_seconds: float
     email_generation_enabled: bool
     email_sending_enabled: bool
     redis_url: str
@@ -302,6 +304,10 @@ def get_settings() -> Settings:
         site_classification_llm_enabled=_env_bool("SITE_CLASSIFICATION_LLM_ENABLED", False),
         site_classification_llm_model=_env("SITE_CLASSIFICATION_LLM_MODEL", "gpt-4.1-mini"),
         site_classification_llm_min_confidence=float(_env("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.6")),
+        contact_enrich_playwright_enabled=_env_bool("CONTACT_ENRICH_PLAYWRIGHT_ENABLED", False),
+        contact_enrich_playwright_timeout_seconds=float(
+            _env("CONTACT_ENRICH_PLAYWRIGHT_TIMEOUT_SECONDS", "20")
+        ),
         email_generation_enabled=_env_bool("EMAIL_GENERATION_ENABLED", True),
         email_sending_enabled=_env_bool("EMAIL_SENDING_ENABLED", True),
         redis_url=_env("REDIS_URL", "redis://redis:6379/0"),

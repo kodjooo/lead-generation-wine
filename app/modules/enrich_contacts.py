@@ -9,8 +9,9 @@ import re
 import time
 from dataclasses import dataclass
 from unicodedata import category
+from collections import deque
 from typing import Dict, Iterable, List, Optional, Set
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
@@ -18,12 +19,17 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.modules.constants import HOMEPAGE_EXCERPT_LIMIT
+from app.config import get_settings
 from app.modules.utils.db import get_session_factory, session_scope
 from app.modules.utils.email import clean_email, is_valid_email
 from app.modules.utils.normalize import normalize_url
 
 LOGGER = logging.getLogger("app.enrich_contacts")
 EMAIL_RE = re.compile(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", re.IGNORECASE)
+EMAIL_OBFUSCATED_RE = re.compile(
+    r"([A-Z0-9._%+-]+)\s*(?:@|\(at\)|\[at\]|\sat\s)\s*([A-Z0-9.-]+)\s*(?:\.|\(dot\)|\[dot\]|\sdot\s)\s*([A-Z]{2,})",
+    re.IGNORECASE,
+)
 BOT_CHALLENGE_MARKERS = (
     "captcha",
     "cloudflare",
@@ -77,13 +83,24 @@ class ContactEnricher:
         min_delay_seconds: float = 0.35,
         max_delay_seconds: float = 1.1,
         max_retries: int = 2,
+        max_pages_per_company: int = 12,
+        playwright_enabled: Optional[bool] = None,
+        playwright_timeout: Optional[float] = None,
         sleep_func=None,
     ) -> None:
+        settings = get_settings()
         self.session_factory = session_factory or get_session_factory()
         self.timeout = timeout
         self.min_delay_seconds = min_delay_seconds
         self.max_delay_seconds = max_delay_seconds
         self.max_retries = max_retries
+        self.max_pages_per_company = max_pages_per_company
+        self.playwright_enabled = (
+            settings.contact_enrich_playwright_enabled if playwright_enabled is None else playwright_enabled
+        )
+        self.playwright_timeout = (
+            settings.contact_enrich_playwright_timeout_seconds if playwright_timeout is None else playwright_timeout
+        )
         self._sleep = sleep_func or time.sleep
         self.headers = {
             "User-Agent": (
@@ -100,6 +117,7 @@ class ContactEnricher:
         self,
         company_id: str,
         canonical_domain: str,
+        industry: Optional[str] = None,
         session: Optional[Session] = None,
     ) -> List[str]:
         """Запускает процесс обогащения и возвращает список идентификаторов контактов."""
@@ -109,55 +127,83 @@ class ContactEnricher:
             return []
 
         if session is not None:
-            return self._enrich_with_session(session, company_id, domain)
+            return self._enrich_with_session(session, company_id, domain, industry)
 
         with session_scope(self.session_factory) as scoped_session:
-            return self._enrich_with_session(scoped_session, company_id, domain)
+            return self._enrich_with_session(scoped_session, company_id, domain, industry)
 
     def _enrich_with_session(
         self,
         session: Session,
         company_id: str,
         canonical_domain: str,
+        industry: Optional[str],
     ) -> List[str]:
         base_url = normalize_url(f"https://{canonical_domain}")
         if not base_url:
             LOGGER.warning("Не удалось нормализовать базовый URL для компании %s (%s).", company_id, canonical_domain)
             return []
 
-        candidates = self._build_candidate_urls(base_url)
-        collected_email: Optional[ContactRecord] = None
+        candidates = self._build_candidate_urls(base_url, industry)
+        queue = deque(candidates)
+        visited: Set[str] = set()
+        collected_contacts: Dict[str, ContactRecord] = {}
         homepage_excerpt_saved = False
 
-        for candidate_url in candidates:
-            html = self._fetch_html(candidate_url)
-            if not html:
+        while queue and len(visited) < self.max_pages_per_company:
+            candidate_url = queue.popleft()
+            if candidate_url in visited:
                 continue
-            if not homepage_excerpt_saved and self._is_homepage(candidate_url, base_url):
-                self._save_homepage_excerpt(session, company_id, html)
-                homepage_excerpt_saved = True
-            if collected_email is None:
-                for contact in self._extract_contacts_from_html(html, candidate_url):
-                    if contact.contact_type == "email":
-                        collected_email = contact
-                        break
-            if collected_email:
-                break  # найден первый email, выходим
+            visited.add(candidate_url)
+            html = self._fetch_html(candidate_url)
+            static_contacts_found = False
+            if html:
+                if not homepage_excerpt_saved and self._is_homepage(candidate_url, base_url):
+                    self._save_homepage_excerpt(session, company_id, html)
+                    homepage_excerpt_saved = True
+                static_contacts_found = self._merge_contacts(
+                    collected_contacts,
+                    self._extract_contacts_from_html(html, candidate_url),
+                )
+                self._enqueue_discovered_links(queue, visited, html, candidate_url, base_url, industry)
+
+            if self.playwright_enabled and (not html or not static_contacts_found):
+                rendered_html = self._fetch_rendered_html(candidate_url)
+                if rendered_html:
+                    if not homepage_excerpt_saved and self._is_homepage(candidate_url, base_url):
+                        self._save_homepage_excerpt(session, company_id, rendered_html)
+                        homepage_excerpt_saved = True
+                    self._merge_contacts(
+                        collected_contacts,
+                        self._extract_contacts_from_html(rendered_html, candidate_url),
+                    )
+                    self._enqueue_discovered_links(queue, visited, rendered_html, candidate_url, base_url, industry)
 
         if not homepage_excerpt_saved:
             html = self._fetch_html(base_url)
             if html:
                 self._save_homepage_excerpt(session, company_id, html)
+            elif self.playwright_enabled:
+                rendered_html = self._fetch_rendered_html(base_url)
+                if rendered_html:
+                    self._save_homepage_excerpt(session, company_id, rendered_html)
 
-        if not collected_email:
+        if not collected_contacts:
             self._mark_company_status(session, company_id, "contacts_not_found")
             LOGGER.info("Контакты для компании %s не найдены.", company_id)
             return []
 
         inserted_ids: List[str] = []
-        record = collected_email
-        cleaned_value = clean_email(record.value)
-        if cleaned_value and is_valid_email(cleaned_value):
+        ranked_contacts = self._rank_contacts(list(collected_contacts.values()), industry=industry)
+        for index, record in enumerate(ranked_contacts):
+            cleaned_value = clean_email(record.value)
+            if not cleaned_value or not is_valid_email(cleaned_value):
+                LOGGER.debug(
+                    "Получен невалидный e-mail '%s' для компании %s — пропускаем запись.",
+                    record.value,
+                    company_id,
+                )
+                continue
             metadata = json.dumps({"label": record.label, "source_type": record.contact_type})
             result = session.execute(
                 text(INSERT_CONTACT_SQL),
@@ -166,25 +212,19 @@ class ContactEnricher:
                     "contact_type": record.contact_type,
                     "value": cleaned_value,
                     "source_url": record.source_url,
-                    "is_primary": True,
+                    "is_primary": index == 0,
                     "quality_score": record.quality_score,
                     "metadata": metadata,
                 },
             )
             inserted_ids.append(str(result.scalar_one()))
-        else:
-            LOGGER.debug(
-                "Получен невалидный e-mail '%s' для компании %s — пропускаем запись.",
-                record.value,
-                company_id,
-            )
 
         if inserted_ids:
             self._mark_company_status(session, company_id, "contacts_ready")
 
         return inserted_ids
 
-    def _build_candidate_urls(self, base_url: str) -> List[str]:
+    def _build_candidate_urls(self, base_url: str, industry: Optional[str]) -> List[str]:
         suffixes = [
             "/",
             "/contact",
@@ -195,10 +235,38 @@ class ContactEnricher:
             "/kontakty",
             "/contacts/",
             "/kontakty/",
-            "/arenda",
-            "/leasing",
-            "/rent",
         ]
+        if industry == "mall":
+            suffixes.extend(
+                [
+                    "/arenda",
+                    "/leasing",
+                    "/rent",
+                    "/arendatoram",
+                    "/tenants",
+                    "/lease",
+                    "/commercial",
+                    "/advertising",
+                    "/partners",
+                ]
+            )
+        elif industry == "real_estate_agency":
+            suffixes.extend(
+                [
+                    "/team",
+                    "/agents",
+                    "/realtors",
+                    "/offices",
+                    "/office",
+                    "/services",
+                    "/uslugi",
+                    "/komanda",
+                    "/agenty",
+                    "/rieltory",
+                ]
+            )
+        else:
+            suffixes.extend(["/arenda", "/leasing", "/rent", "/team", "/offices", "/services"])
         seen: Set[str] = set()
         candidates: List[str] = []
         for suffix in suffixes:
@@ -248,6 +316,42 @@ class ContactEnricher:
         LOGGER.debug("Не удалось загрузить %s: %s", url, last_error)
         return ""
 
+    def _fetch_rendered_html(self, url: str) -> str:
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError:
+            LOGGER.debug("Playwright не установлен, рендер для %s пропущен.", url)
+            return ""
+
+        try:
+            with sync_playwright() as playwright:
+                browser = playwright.chromium.launch(
+                    headless=True,
+                    args=["--no-sandbox", "--disable-dev-shm-usage"],
+                )
+                context = browser.new_context(
+                    user_agent=self.headers["User-Agent"],
+                    locale="ru-RU",
+                )
+                page = context.new_page()
+                page.set_extra_http_headers(
+                    {
+                        "Accept-Language": self.headers["Accept-Language"],
+                        "Cache-Control": self.headers["Cache-Control"],
+                        "Pragma": self.headers["Pragma"],
+                    }
+                )
+                page.goto(url, wait_until="networkidle", timeout=int(self.playwright_timeout * 1000))
+                page.wait_for_timeout(500)
+                content = page.content()
+                page.close()
+                context.close()
+                browser.close()
+                return content
+        except Exception as exc:  # noqa: BLE001
+            LOGGER.debug("Playwright не смог отрендерить %s: %s", url, exc)
+            return ""
+
     def _respect_delay(self) -> None:
         if self.max_delay_seconds <= 0:
             return
@@ -266,7 +370,7 @@ class ContactEnricher:
 
     def _extract_contacts_from_html(self, html: str, source_url: str) -> Iterable[ContactRecord]:
         soup = BeautifulSoup(html, "html.parser")
-        found_email: Optional[ContactRecord] = None
+        contacts: Dict[str, ContactRecord] = {}
 
         for anchor in soup.find_all("a"):
             href = (anchor.get("href") or "").strip()
@@ -278,29 +382,152 @@ class ContactEnricher:
                     LOGGER.debug("Пропускаем mailto без валидного e-mail: %s", email)
                     continue
                 record = ContactRecord("email", cleaned, source_url, 1.0, origin="mailto", label=text or "mailto")
-                found_email = record
-                break
-
-        if found_email:
-            return [found_email]
+                contacts[record.normalized_key()] = record
 
         text_content = soup.get_text(" ", strip=True)
         for match in EMAIL_RE.finditer(text_content):
             cleaned = clean_email(match.group(0))
             if not is_valid_email(cleaned):
                 continue
-            return [
-                ContactRecord(
-                    "email",
-                    cleaned,
-                    source_url,
-                    0.8,
-                    origin="text",
-                    label="text_email",
-                )
-            ]
+            record = ContactRecord(
+                "email",
+                cleaned,
+                source_url,
+                0.8,
+                origin="text",
+                label="text_email",
+            )
+            contacts.setdefault(record.normalized_key(), record)
 
-        return []
+        for local, domain, tld in EMAIL_OBFUSCATED_RE.findall(text_content):
+            cleaned = clean_email(f"{local}@{domain}.{tld}")
+            if not is_valid_email(cleaned):
+                continue
+            record = ContactRecord(
+                "email",
+                cleaned,
+                source_url,
+                0.7,
+                origin="obfuscated_text",
+                label="obfuscated_email",
+            )
+            contacts.setdefault(record.normalized_key(), record)
+
+        return list(contacts.values())
+
+    def _discover_priority_links(
+        self,
+        html: str,
+        *,
+        current_url: str,
+        base_url: str,
+        industry: Optional[str],
+    ) -> List[str]:
+        soup = BeautifulSoup(html, "html.parser")
+        parsed_base = urlparse(base_url)
+        markers = [
+            "contact",
+            "contacts",
+            "contact-us",
+            "kontakty",
+            "about",
+            "about-us",
+            "office",
+            "offices",
+            "team",
+            "services",
+            "uslugi",
+            "komanda",
+            "rieltory",
+            "agenty",
+            "agents",
+            "realtors",
+        ]
+        if industry == "mall":
+            markers.extend(["arenda", "leasing", "rent", "arendator", "tenants", "lease", "partners"])
+        if industry == "real_estate_agency":
+            markers.extend(["broker", "agency", "agent", "realtor", "офис", "команда"])
+
+        discovered: List[str] = []
+        seen: Set[str] = set()
+        for anchor in soup.find_all("a"):
+            href = (anchor.get("href") or "").strip()
+            text_value = anchor.get_text(" ", strip=True).lower()
+            haystack = f"{href.lower()} {text_value}"
+            if not any(marker in haystack for marker in markers):
+                continue
+            candidate = normalize_url(urljoin(current_url, href))
+            if not candidate:
+                continue
+            parsed_candidate = urlparse(candidate)
+            if parsed_candidate.netloc != parsed_base.netloc:
+                continue
+            if candidate == base_url.rstrip("/") or candidate in seen:
+                continue
+            seen.add(candidate)
+            discovered.append(candidate)
+        return discovered
+
+    @staticmethod
+    def _merge_contacts(
+        collected_contacts: Dict[str, ContactRecord],
+        contacts: Iterable[ContactRecord],
+    ) -> bool:
+        found = False
+        for contact in contacts:
+            found = True
+            key = contact.normalized_key()
+            existing = collected_contacts.get(key)
+            if existing is None or contact.quality_score > existing.quality_score:
+                collected_contacts[key] = contact
+        return found
+
+    def _enqueue_discovered_links(
+        self,
+        queue: deque[str],
+        visited: Set[str],
+        html: str,
+        current_url: str,
+        base_url: str,
+        industry: Optional[str],
+    ) -> None:
+        for extra_url in self._discover_priority_links(
+            html,
+            current_url=current_url,
+            base_url=base_url,
+            industry=industry,
+        ):
+            if extra_url not in visited and extra_url not in queue:
+                queue.append(extra_url)
+
+    def _rank_contacts(self, contacts: List[ContactRecord], *, industry: Optional[str]) -> List[ContactRecord]:
+        return sorted(contacts, key=lambda record: self._contact_priority(record, industry=industry), reverse=True)
+
+    def _contact_priority(self, record: ContactRecord, *, industry: Optional[str]) -> float:
+        score = record.quality_score
+        value = clean_email(record.value)
+        local = value.split("@", 1)[0] if "@" in value else value
+        source_url = record.source_url.lower()
+
+        if any(token in local for token in ("arenda", "lease", "leasing", "rent", "commercial", "partners")):
+            score += 1.8
+        if any(token in local for token in ("sales", "broker", "office", "realty", "rielt", "agent")):
+            score += 1.2
+        if any(token in local for token in ("info", "hello", "mail", "admin")):
+            score += 0.2
+        if any(token in local for token in ("support", "noreply", "no-reply", "robot", "bot")):
+            score -= 2.0
+
+        if industry == "mall" and any(token in source_url for token in ("/arenda", "/leasing", "/rent", "/partners")):
+            score += 1.5
+        if industry == "real_estate_agency" and any(
+            token in source_url for token in ("/team", "/agents", "/realtors", "/offices", "/services", "/komanda")
+        ):
+            score += 1.0
+
+        if record.origin == "mailto":
+            score += 0.5
+        return round(score, 3)
 
     @staticmethod
     def _mark_company_status(session: Session, company_id: str, status: str) -> None:

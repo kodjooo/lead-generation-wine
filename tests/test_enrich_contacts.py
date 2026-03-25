@@ -55,8 +55,9 @@ def test_extract_contacts_from_html() -> None:
     contacts = list(enricher._extract_contacts_from_html(html, "https://example.com"))
 
     emails = [c for c in contacts if c.contact_type == "email"]
-    assert len(emails) == 1
+    assert len(emails) == 2
     assert emails[0].value.lower() == "sales@example.com"
+    assert emails[1].value.lower() == "info@example.com"
 
 
 def test_extract_contacts_skips_invalid_mailto() -> None:
@@ -91,6 +92,23 @@ def test_extract_contacts_finds_text_email() -> None:
     assert contacts[0].quality_score == 0.8
 
 
+def test_extract_contacts_finds_obfuscated_email() -> None:
+    enricher = ContactEnricher(session_factory=lambda: None, sleep_func=lambda _: None)  # type: ignore[arg-type]
+    html = """
+    <html>
+      <body>
+        <p>Для связи: rent [at] mall-example [dot] ru</p>
+      </body>
+    </html>
+    """
+
+    contacts = list(enricher._extract_contacts_from_html(html, "https://example.com"))
+
+    assert len(contacts) == 1
+    assert contacts[0].value == "rent@mall-example.ru"
+    assert contacts[0].quality_score == 0.7
+
+
 @respx.mock
 def test_enrich_company_persists_contacts() -> None:
     session = DummySession()
@@ -113,17 +131,37 @@ def test_enrich_company_persists_contacts() -> None:
             """,
         )
     )
+    for suffix in [
+        "contact",
+        "contacts",
+        "contact-us",
+        "about",
+        "about-us",
+        "kontakty",
+        "contacts/",
+        "kontakty/",
+        "arenda",
+        "leasing",
+        "rent",
+        "team",
+        "offices",
+        "services",
+    ]:
+        respx.get(f"https://site.com/{suffix}").mock(return_value=httpx.Response(404, text="not found"))
 
     inserted = enricher.enrich_company("company-1", "site.com", session=session)
 
-    assert inserted == ["contact-1"]
+    assert inserted == ["contact-1", "contact-2"]
     # первый вызов — обновление companies с homepage_excerpt
     assert "UPDATE companies" in session.calls[0][0]
     insert_calls = [call for call in session.calls if "INSERT INTO contacts" in call[0]]
-    assert len(insert_calls) == 1
+    assert len(insert_calls) == 2
     first_insert = insert_calls[0][1]
-    assert first_insert["value"] == "hello@site.com"
+    second_insert = insert_calls[1][1]
+    assert first_insert["value"] == "sales@site.com"
     assert first_insert["is_primary"] is True
+    assert second_insert["value"] == "hello@site.com"
+    assert second_insert["is_primary"] is False
     status_calls = [call for call in session.calls if "SET status" in call[0]]
     assert status_calls
     assert status_calls[-1][1]["status"] == "contacts_ready"
@@ -189,3 +227,72 @@ def test_fetch_html_handles_bot_challenge() -> None:
     html = enricher._fetch_html("https://challenge.com/")
 
     assert html == ""
+
+
+def test_build_candidate_urls_is_industry_aware() -> None:
+    enricher = ContactEnricher(session_factory=lambda: None, sleep_func=lambda _: None)  # type: ignore[arg-type]
+
+    mall_urls = enricher._build_candidate_urls("https://mall.example/", "mall")
+    agency_urls = enricher._build_candidate_urls("https://agency.example/", "real_estate_agency")
+
+    assert "https://mall.example/arendatoram" in mall_urls
+    assert "https://mall.example/partners" in mall_urls
+    assert "https://agency.example/team" in agency_urls
+    assert "https://agency.example/offices" in agency_urls
+
+
+def test_discover_priority_links_finds_internal_contact_pages() -> None:
+    enricher = ContactEnricher(session_factory=lambda: None, sleep_func=lambda _: None)  # type: ignore[arg-type]
+    html = """
+    <html>
+      <body>
+        <a href="/team">Команда</a>
+        <a href="/contacts">Контакты</a>
+        <a href="https://external.example/contact">External</a>
+      </body>
+    </html>
+    """
+
+    links = enricher._discover_priority_links(
+        html,
+        current_url="https://agency.example/",
+        base_url="https://agency.example/",
+        industry="real_estate_agency",
+    )
+
+    assert "https://agency.example/team" in links
+    assert "https://agency.example/contacts" in links
+    assert all("external.example" not in link for link in links)
+
+
+def test_rank_contacts_prefers_leasing_email_for_mall() -> None:
+    enricher = ContactEnricher(session_factory=lambda: None, sleep_func=lambda _: None)  # type: ignore[arg-type]
+    contacts = [
+        type("Record", (), {"value": "info@example.com", "quality_score": 1.0, "source_url": "https://mall.example/contact", "origin": "mailto"})(),
+        type("Record", (), {"value": "leasing@example.com", "quality_score": 0.8, "source_url": "https://mall.example/leasing", "origin": "text"})(),
+    ]
+
+    ranked = enricher._rank_contacts(contacts, industry="mall")
+
+    assert ranked[0].value == "leasing@example.com"
+
+
+def test_enrich_company_uses_rendered_html_fallback() -> None:
+    session = DummySession()
+    enricher = ContactEnricher(
+        session_factory=lambda: session,  # type: ignore[arg-type]
+        sleep_func=lambda _: None,
+        playwright_enabled=True,
+    )
+
+    enricher._fetch_html = lambda url: "<html><body><p>No contacts</p></body></html>"  # type: ignore[method-assign]
+    enricher._fetch_rendered_html = lambda url: (  # type: ignore[method-assign]
+        '<html><body><a href="mailto:leasing@example.com">Leasing</a></body></html>'
+    )
+
+    inserted = enricher.enrich_company("company-rendered", "rendered.example", industry="mall", session=session)
+
+    assert inserted == ["contact-1"]
+    insert_calls = [call for call in session.calls if "INSERT INTO contacts" in call[0]]
+    assert len(insert_calls) == 1
+    assert insert_calls[0][1]["value"] == "leasing@example.com"

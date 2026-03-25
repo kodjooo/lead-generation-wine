@@ -9,7 +9,8 @@ WORKDIR /app
 COPY requirements.txt ./
 
 RUN pip install --no-cache-dir --upgrade pip \
-    && if [ -s requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+    && if [ -s requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi \
+    && python -m playwright install --with-deps chromium
 
 COPY app ./app
 

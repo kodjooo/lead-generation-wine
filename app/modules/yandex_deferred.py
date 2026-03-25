@@ -76,7 +76,7 @@ class DeferredQueryParams:
     sort_mode: str = "SORT_MODE_BY_RELEVANCE"
     sort_order: str = "SORT_ORDER_DESC"
     group_mode: str = "GROUP_MODE_DEEP"
-    groups_on_page: int = 100
+    groups_on_page: int = 50
     docs_in_group: int = 1
     max_passages: int = 3
     response_format: str = "FORMAT_XML"

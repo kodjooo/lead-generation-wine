@@ -4,6 +4,8 @@ from contextlib import contextmanager
 from typing import Any, Dict, List, Tuple
 from unittest.mock import patch
 
+import json
+
 import httpx
 import pytest
 import respx
@@ -16,6 +18,7 @@ from app.modules.serp_ingest import (
     SerpParseError,
     SiteClassificationDecision,
     detect_actual_city,
+    evaluate_homepage_content,
     evaluate_serp_document,
     parse_serp_xml,
 )
@@ -108,6 +111,74 @@ def test_evaluate_serp_document_rejects_aggregator_url() -> None:
     assert decision.reason in {"negative_marker", "aggregator_url_pattern"}
 
 
+def test_serp_ingest_skips_agency_excluded_domains() -> None:
+    class LocalDummyResult:
+        def __init__(self, value: str) -> None:
+            self._value = value
+
+        def scalar_one(self) -> str:
+            return self._value
+
+    class LocalDummySession:
+        def __init__(self) -> None:
+            self.calls: List[Tuple[Any, Dict[str, Any]]] = []
+
+        def execute(self, statement: Any, params: Dict[str, Any]) -> LocalDummyResult:
+            self.calls.append((statement, params))
+            return LocalDummyResult("noop")
+
+        def commit(self) -> None:
+            pass
+
+        def rollback(self) -> None:
+            pass
+
+        def close(self) -> None:
+            pass
+
+    session = LocalDummySession()
+
+    @contextmanager
+    def fake_scope(_factory):  # type: ignore[override]
+        try:
+            yield session
+            session.commit()
+        finally:
+            session.close()
+
+    service = SerpIngestService(session_factory=lambda: session)
+    xml_payload = """
+    <response>
+      <grouping>
+        <group>
+          <doc>
+            <url>https://gk-europeya.ru/</url>
+            <domain>gk-europeya.ru</domain>
+            <title>ГК Европея</title>
+            <passages>
+              <passage>Продажа квартир от застройщика</passage>
+            </passages>
+          </doc>
+        </group>
+      </grouping>
+    </response>
+    """.encode("utf-8")
+
+    with patch(
+        "app.modules.serp_ingest.session_scope",
+        side_effect=lambda factory: fake_scope(factory),
+    ):
+        inserted = service.ingest(
+            "11111111-1111-1111-1111-111111111111",
+            xml_payload,
+            yandex_operation_id="op-789",
+            query_metadata={"entity_type": "real_estate_agency", "city": "Краснодар"},
+        )
+
+    assert inserted == []
+    assert session.calls == []
+
+
 def test_evaluate_serp_document_marks_brand_mall_for_homepage_verification() -> None:
     documents = parse_serp_xml(
         """
@@ -159,6 +230,64 @@ def test_evaluate_serp_document_marks_brand_agency_for_homepage_verification() -
     assert decision.is_relevant is True
     assert decision.requires_verification is True
     assert decision.reason == "serp_needs_homepage_verification"
+
+
+def test_evaluate_serp_document_boosts_network_agency_brand() -> None:
+    documents = parse_serp_xml(
+        """
+        <response>
+          <grouping>
+            <group>
+              <doc>
+                <url>https://vladis.ru/</url>
+                <domain>vladis.ru</domain>
+                <title>vladis.ru</title>
+                <passages>
+                  <passage>Федеральное агентство недвижимости</passage>
+                </passages>
+              </doc>
+            </group>
+          </grouping>
+        </response>
+        """.encode("utf-8")
+    )
+
+    decision = evaluate_serp_document(documents[0], "real_estate_agency")
+
+    assert decision.is_relevant is True
+    assert decision.score >= 3.0
+
+
+def test_evaluate_homepage_content_accepts_brand_agency_with_domain_signals() -> None:
+    decision = evaluate_homepage_content(
+        "Купить квартиру в Краснодаре. Подбор недвижимости. Ипотека. Контакты. Специалисты по недвижимости.",
+        "real_estate_agency",
+        domain="vladis.ru",
+    )
+
+    assert decision.is_relevant is True
+    assert decision.reason == "homepage_brand_agency"
+
+
+def test_evaluate_homepage_content_allows_agency_catalog_of_objects() -> None:
+    decision = evaluate_homepage_content(
+        "Каталог объектов недвижимости. Купить квартиру в Краснодаре. Ипотека. Подбор недвижимости. Контакты.",
+        "real_estate_agency",
+        domain="novometr23.ru",
+    )
+
+    assert decision.is_relevant is True
+
+
+def test_evaluate_homepage_content_rejects_agency_directory_page() -> None:
+    decision = evaluate_homepage_content(
+        "Каталог агентств недвижимости. Лучшие агентства. Рейтинг агентств Краснодара.",
+        "real_estate_agency",
+        domain="example.com",
+    )
+
+    assert decision.is_relevant is False
+    assert decision.reason == "homepage_negative_marker"
 
 
 def test_evaluate_serp_document_rejects_developer_for_agency_search() -> None:
@@ -330,6 +459,232 @@ def test_site_classification_llm_marks_tenant_inside_mall(monkeypatch: pytest.Mo
     get_settings.cache_clear()  # type: ignore[attr-defined]
 
 
+@respx.mock
+def test_site_classification_llm_runs_for_uncertain_agency_even_with_city(monkeypatch: pytest.MonkeyPatch) -> None:
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_ENABLED", "true")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.6")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+
+    response_json = {
+        "choices": [
+            {
+                "message": {
+                    "content": (
+                        '{"site_verdict":"official_real_estate_agency_site","detected_city":"Краснодар",'
+                        '"confidence":0.89,"reason":"Сайт агентства недвижимости с каталогом объектов и услугами риэлторов"}'
+                    )
+                }
+            }
+        ]
+    }
+    route = respx.post("https://api.openai.com/v1/chat/completions").mock(
+        return_value=httpx.Response(200, json=response_json)
+    )
+
+    service = SerpIngestService(session_factory=lambda: None)  # type: ignore[arg-type]
+    document = parse_serp_xml(
+        """
+        <response>
+          <grouping>
+            <group>
+              <doc>
+                <url>https://verno.pro/</url>
+                <domain>verno.pro</domain>
+                <title>VERNO</title>
+                <passages>
+                  <passage>Недвижимость в Краснодаре</passage>
+                </passages>
+              </doc>
+            </group>
+          </grouping>
+        </response>
+        """.encode("utf-8")
+    )[0]
+
+    classification = service._maybe_classify_site_with_llm(
+        expected_city="Краснодар",
+        expected_entity_type="real_estate_agency",
+        document=document,
+        homepage_content="Каталог объектов. Купить квартиру в Краснодаре. Ипотека. Контакты.",
+        detection=CityDetection(detected_city="Краснодар", score=4.0, source="homepage"),
+        serp_decision=ScreeningDecision(True, 2.5, "serp_needs_homepage_verification", True),
+        homepage_decision=ScreeningDecision(True, 5.0, None),
+    )
+
+    assert route.called is True
+    assert classification is not None
+    assert classification.site_verdict == "official_real_estate_agency_site"
+    assert classification.detected_city == "Краснодар"
+    assert service._is_llm_verdict_accepted("real_estate_agency", classification.site_verdict) is True
+    request_payload = json.loads(route.calls[0].request.content.decode("utf-8"))
+    assert "посреднических услуг" in request_payload["messages"][0]["content"]
+    user_payload = json.loads(request_payload["messages"][1]["content"])
+    assert "homepage_screening" in user_payload
+    assert "serp_screening" in user_payload
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+
+
+def test_site_classification_llm_skips_confident_agency(monkeypatch: pytest.MonkeyPatch) -> None:
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_ENABLED", "true")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.6")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+
+    service = SerpIngestService(session_factory=lambda: None)  # type: ignore[arg-type]
+    document = parse_serp_xml(
+        """
+        <response>
+          <grouping>
+            <group>
+              <doc>
+                <url>https://centrug.ru/</url>
+                <domain>centrug.ru</domain>
+                <title>Центр-Юг</title>
+                <passages>
+                  <passage>Агентство недвижимости в Краснодаре</passage>
+                </passages>
+                <properties>
+                  <property name="lang">ru</property>
+                </properties>
+              </doc>
+            </group>
+          </grouping>
+        </response>
+        """.encode("utf-8")
+    )[0]
+
+    classification = service._maybe_classify_site_with_llm(
+        expected_city="Краснодар",
+        expected_entity_type="real_estate_agency",
+        document=document,
+        homepage_content="Агентство недвижимости. Купить, продать, ипотека, специалисты по недвижимости, контакты.",
+        detection=CityDetection(detected_city="Краснодар", score=4.0, source="homepage"),
+        serp_decision=ScreeningDecision(True, 8.0, None, False),
+        homepage_decision=ScreeningDecision(True, 12.0, None, False),
+    )
+
+    assert classification is None
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+
+
+@respx.mock
+def test_site_classification_llm_retries_after_transient_http_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_ENABLED", "true")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.6")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+
+    route = respx.post("https://api.openai.com/v1/chat/completions").mock(
+        side_effect=[
+            httpx.Response(429, json={"error": {"message": "rate limit"}}),
+            httpx.Response(
+                200,
+                json={
+                    "choices": [
+                        {
+                            "message": {
+                                "content": (
+                                    '{"site_verdict":"official_real_estate_agency_site","detected_city":"Краснодар",'
+                                    '"confidence":0.91,"reason":"Повторный вызов удался"}'
+                                )
+                            }
+                        }
+                    ]
+                },
+            ),
+        ]
+    )
+
+    service = SerpIngestService(session_factory=lambda: None)  # type: ignore[arg-type]
+    document = parse_serp_xml(
+        """
+        <response>
+          <grouping>
+            <group>
+              <doc>
+                <url>https://ayax.ru/</url>
+                <domain>ayax.ru</domain>
+                <title>Аякс</title>
+                <passages>
+                  <passage>Недвижимость в Краснодаре</passage>
+                </passages>
+              </doc>
+            </group>
+          </grouping>
+        </response>
+        """.encode("utf-8")
+    )[0]
+
+    classification = service._request_site_classification_llm(
+        expected_city="Краснодар",
+        expected_entity_type="real_estate_agency",
+        document=document,
+        homepage_content="Агентство недвижимости. Купить квартиру. Ипотека. Контакты.",
+        serp_decision=ScreeningDecision(True, 2.0, "serp_needs_homepage_verification", True),
+        homepage_decision=ScreeningDecision(True, 5.0, None),
+    )
+
+    assert route.call_count == 2
+    assert classification.site_verdict == "official_real_estate_agency_site"
+    assert classification.detected_city == "Краснодар"
+    assert classification.confidence == 0.91
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+
+
+@respx.mock
+def test_site_classification_llm_retries_invalid_payload_three_times_then_skips(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_ENABLED", "true")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.6")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+
+    route = respx.post("https://api.openai.com/v1/chat/completions").mock(
+        side_effect=[
+            httpx.Response(200, json={"choices": [{"message": {"content": "not-json"}}]}),
+            httpx.Response(200, json={"choices": [{"message": {"content": "{bad json"}}]}),
+            httpx.Response(200, json={"choices": [{"message": {"content": "```json\nstill-bad\n```"}}]}),
+        ]
+    )
+
+    service = SerpIngestService(session_factory=lambda: None)  # type: ignore[arg-type]
+    document = parse_serp_xml(
+        """
+        <response>
+          <grouping>
+            <group>
+              <doc>
+                <url>https://vladis.ru/</url>
+                <domain>vladis.ru</domain>
+                <title>Владис</title>
+                <passages>
+                  <passage>Агентство недвижимости</passage>
+                </passages>
+              </doc>
+            </group>
+          </grouping>
+        </response>
+        """.encode("utf-8")
+    )[0]
+
+    classification = service._request_site_classification_llm(
+        expected_city="Краснодар",
+        expected_entity_type="real_estate_agency",
+        document=document,
+        homepage_content="Агентство недвижимости. Ипотека. Контакты.",
+        serp_decision=ScreeningDecision(True, 2.0, "serp_needs_homepage_verification", True),
+        homepage_decision=ScreeningDecision(True, 5.0, None),
+    )
+
+    assert route.call_count == 3
+    assert classification.site_verdict is None
+    assert classification.detected_city is None
+    assert classification.confidence == 0.0
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+
+
 class DummyResult:
     def __init__(self, value: str) -> None:
         self._value = value
@@ -376,7 +731,11 @@ def test_serp_ingest_persists_results_and_companies() -> None:
         side_effect=lambda factory: fake_scope(factory),
     ), patch.object(
         service,
-        "_verify_candidate_homepage",
+        "_get_homepage_content",
+        return_value="Торгово-развлекательный центр. Контакты и аренда.",
+    ), patch.object(
+        service,
+        "_evaluate_homepage",
         return_value=ScreeningDecision(True, 7.5, None),
     ), patch.object(
         service,

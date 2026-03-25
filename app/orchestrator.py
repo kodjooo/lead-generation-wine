@@ -85,7 +85,7 @@ WHERE id = :operation_id;
 """
 
 SELECT_COMPANIES_WITHOUT_CONTACTS_SQL = """
-SELECT c.id, c.canonical_domain
+SELECT c.id, c.canonical_domain, c.industry
 FROM companies c
 LEFT JOIN contacts ct ON ct.company_id = c.id
 WHERE ct.id IS NULL
@@ -446,6 +446,7 @@ class PipelineOrchestrator:
                 inserted = self.contact_enricher.enrich_company(
                     company_id=str(row["id"]),
                     canonical_domain=canonical_domain,
+                    industry=row.get("industry"),
                     session=session,
                 )
                 if inserted:

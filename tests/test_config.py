@@ -21,6 +21,8 @@ def test_settings_loaded_from_env(monkeypatch) -> None:
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_ENABLED", "true")
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MODEL", "gpt-4.1-mini")
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.75")
+    monkeypatch.setenv("CONTACT_ENRICH_PLAYWRIGHT_ENABLED", "true")
+    monkeypatch.setenv("CONTACT_ENRICH_PLAYWRIGHT_TIMEOUT_SECONDS", "22")
     monkeypatch.setenv("EMAIL_GENERATION_ENABLED", "false")
     monkeypatch.setenv("GMAIL_SMTP_HOST", "smtp.test")
     monkeypatch.setenv("GMAIL_SMTP_PORT", "2525")
@@ -74,6 +76,8 @@ def test_settings_loaded_from_env(monkeypatch) -> None:
     assert settings.site_classification_llm_enabled is True
     assert settings.site_classification_llm_model == "gpt-4.1-mini"
     assert settings.site_classification_llm_min_confidence == 0.75
+    assert settings.contact_enrich_playwright_enabled is True
+    assert settings.contact_enrich_playwright_timeout_seconds == 22.0
     assert settings.email_generation_enabled is False
 
     get_settings.cache_clear()  # type: ignore[attr-defined]
