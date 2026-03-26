@@ -776,6 +776,7 @@ def test_serp_ingest_persists_results_and_companies() -> None:
     assert params_company["domain"] == "example.com"
     assert params_company["website_url"].startswith("https://example.com")
     assert params_company["industry"] == "mall"
+    assert params_company["actual_region"] == "Москва"
 
 
 def test_serp_ingest_skips_excluded_domains() -> None:

@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS companies (
     website_url TEXT,
     industry TEXT,
     region TEXT,
+    actual_region TEXT,
     primary_email TEXT,
     primary_email_status TEXT NOT NULL DEFAULT 'unknown',
     primary_email_note TEXT,

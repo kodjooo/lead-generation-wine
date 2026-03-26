@@ -54,6 +54,7 @@ CREATE OR REPLACE VIEW company_status_view AS
 SELECT
     c.id,
     c.canonical_domain,
+    c.actual_region,
     c.primary_email,
     c.primary_email_status,
     c.primary_email_note,

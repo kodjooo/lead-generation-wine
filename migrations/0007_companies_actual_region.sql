@@ -1,26 +1,12 @@
-ALTER TABLE search_batch_logs
-    ALTER COLUMN niche DROP NOT NULL;
+ALTER TABLE companies
+    ADD COLUMN IF NOT EXISTS actual_region TEXT;
 
-ALTER TABLE search_batch_logs
-    ADD COLUMN IF NOT EXISTS entity_scope TEXT;
+UPDATE companies
+SET actual_region = NULLIF(attributes ->> 'detected_city', '')
+WHERE COALESCE(actual_region, '') = '';
 
-DROP VIEW IF EXISTS daily_summaries;
 DROP VIEW IF EXISTS top_domains;
 DROP VIEW IF EXISTS company_status_view;
-
-CREATE OR REPLACE VIEW daily_summaries AS
-SELECT
-    date_trunc('day', scheduled_for) AS day,
-    COUNT(*) AS total_queries,
-    COUNT(*) FILTER (WHERE metadata ->> 'entity_type' = 'mall') AS mall_queries,
-    COUNT(*) FILTER (WHERE metadata ->> 'entity_type' = 'real_estate_agency') AS agency_queries,
-    COUNT(*) FILTER (WHERE status = 'pending') AS pending_queries,
-    COUNT(*) FILTER (WHERE status = 'in_progress') AS in_progress_queries,
-    COUNT(*) FILTER (WHERE status = 'completed') AS completed_queries,
-    COUNT(*) FILTER (WHERE status = 'failed') AS failed_queries
-FROM serp_queries
-GROUP BY 1
-ORDER BY 1 DESC;
 
 CREATE OR REPLACE VIEW top_domains AS
 SELECT

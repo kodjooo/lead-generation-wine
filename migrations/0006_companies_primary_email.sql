@@ -38,6 +38,7 @@ SELECT
     c.canonical_domain,
     c.industry AS entity_type,
     c.region AS source_city,
+    c.actual_region,
     c.primary_email,
     c.primary_email_status,
     c.primary_email_note,
