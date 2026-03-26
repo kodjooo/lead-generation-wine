@@ -157,11 +157,42 @@ services:
    cd lead-generation-wine
    cp .env.example .env
    ```
-3. **Заполните `.env`:** пропишите ключи Yandex и Google, Gmail `GMAIL_*` (App Password) и Яндекс `YANDEX_*` параметры, активируйте `ROUTING_ENABLED=true`, установите `EMAIL_SENDING_ENABLED=true`.
-4. **Разместите ключи сервисных аккаунтов:** скопируйте файлы JSON в каталог `secure/` на сервере. Если файла нет (`secure/authorized_key.json`), Docker создаст директорию с таким именем, и сервисы завершатся ошибкой `IsADirectoryError`.
-5. **Примените миграции:**
+3. **Подготовьте каталог с секретами:**
    ```bash
-   docker compose up -d db
+   mkdir -p secure
+   ```
+4. **Заполните `.env`:**
+   - пропишите ключи Yandex и Google;
+   - укажите `POSTGRES_EXPOSE_PORT`, если нужен доступ к БД с хоста через DBeaver/psql;
+   - заполните Gmail `GMAIL_*` (App Password) и/или Яндекс `YANDEX_*`;
+   - для первого прогона безопаснее поставить:
+     ```env
+     EMAIL_GENERATION_ENABLED=false
+     EMAIL_SENDING_ENABLED=false
+     ```
+   - после проверки пайплайна включить нужные флаги обратно.
+5. **Разместите ключи сервисных аккаунтов:** скопируйте файлы JSON в каталог `secure/` на сервере.
+   Ожидаемые пути:
+   - `secure/authorized_key.json`
+   - `secure/google-credentials.json`
+
+   Если вместо файла по этим путям окажется директория, сервисы завершатся ошибкой `IsADirectoryError`.
+6. **Проверьте конфиг до запуска:**
+   ```bash
+   grep -E '^(POSTGRES_HOST|POSTGRES_PORT|POSTGRES_EXPOSE_PORT|POSTGRES_DB|POSTGRES_USER|GOOGLE_SHEET_ID|GOOGLE_SHEET_TAB|EMAIL_GENERATION_ENABLED|EMAIL_SENDING_ENABLED)=' .env
+   ```
+   Для контейнеров должно быть:
+   - `POSTGRES_HOST=db`
+   - `POSTGRES_PORT=5432`
+
+   А внешний порт для DBeaver/psql задаётся отдельно через `POSTGRES_EXPOSE_PORT`.
+7. **Соберите образ и поднимите только инфраструктуру:**
+   ```bash
+   docker compose pull
+   docker compose up -d db redis
+   ```
+8. **Примените миграции:**
+   ```bash
    for f in migrations/000*.sql; do
      echo "Applying $f"
      docker compose exec -T db \
@@ -169,22 +200,48 @@ services:
    done
    # замените leadgen/leadgen на свои POSTGRES_USER/POSTGRES_DB при необходимости
    ```
-   
-6. **Запустите сервисы:**
+9. **Запустите сервисы:**
    ```bash
    docker compose up -d --build
    ```
    Хостовой Redis останавливать не нужно: контейнерный Redis работает только внутри сети compose и не занимает порт `6379` на сервере.
-7. **Обновление:**
+10. **Проверьте, что контейнеры здоровы:**
+   ```bash
+   docker compose ps
+   docker compose logs --tail=50 app
+   docker compose logs --tail=50 scheduler
+   docker compose logs --tail=50 worker
+   ```
+11. **Сделайте первый ручной sync из Google Sheets:**
+   ```bash
+   docker compose run --rm app python -m app.tools.sync_sheet
+   ```
+   После этого можно проверить, что запросы реально появились:
+   ```bash
+   docker compose exec -T db psql -U leadgen -d leadgen -P pager=off -c "select count(*) from serp_queries;"
+   ```
+12. **Если нужен немедленный тестовый прогон без ожидания `scheduled_for`:**
+   ```bash
+   docker compose exec -T db psql -U leadgen -d leadgen -c "update serp_queries set scheduled_for = now(), status = 'pending' where status = 'pending';"
+   docker compose logs -f scheduler
+   ```
+13. **Обновление проекта из репозитория:**
    ```bash
    git pull
+   docker compose up -d db redis
+   for f in migrations/000*.sql; do
+     echo "Applying $f"
+     docker compose exec -T db \
+       psql -U leadgen -d leadgen -v ON_ERROR_STOP=1 -f - < "$f"
+   done
    docker compose up -d --build
    ```
-   Если есть новые миграции — повторите шаг 5.
-8. **Мониторинг:**
+14. **Быстрый rollback по коду:** при необходимости вернитесь на предыдущий commit и пересоберите контейнеры.
+15. **Мониторинг:**
    ```bash
    docker compose logs -f app
    docker compose logs -f worker
+   docker compose logs -f scheduler
    ```
 
 ### Управление оркестратором
