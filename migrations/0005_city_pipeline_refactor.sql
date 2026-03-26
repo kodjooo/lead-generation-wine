@@ -38,10 +38,12 @@ ORDER BY serp_hits DESC NULLS LAST;
 CREATE OR REPLACE VIEW company_status_view AS
 SELECT
     c.id,
-    c.name,
     c.canonical_domain,
     c.industry AS entity_type,
     c.region AS source_city,
+    c.primary_email,
+    c.primary_email_status,
+    c.primary_email_note,
     c.status,
     c.opt_out,
     c.first_seen_at,

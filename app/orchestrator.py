@@ -101,7 +101,7 @@ WITH locked_contacts AS (
     FROM contacts ct
     JOIN companies c ON c.id = ct.company_id
     WHERE ct.contact_type = 'email'
-      AND c.name IS NOT NULL AND c.name <> ''
+      AND ct.is_primary = TRUE
       AND c.attributes ->> 'homepage_excerpt' IS NOT NULL
       AND c.attributes ->> 'homepage_excerpt' <> ''
       AND NOT EXISTS (
@@ -123,7 +123,6 @@ SELECT
     ct.id AS contact_id,
     ct.company_id,
     ct.value,
-    c.name,
     c.canonical_domain,
     c.industry,
     c.attributes ->> 'homepage_excerpt' AS homepage_excerpt
@@ -472,7 +471,7 @@ class PipelineOrchestrator:
             queued = 0
             for row in rows:
                 company = CompanyBrief(
-                    name=row["name"],
+                    name=None,
                     domain=row["canonical_domain"] or row["value"].split("@")[-1],
                     entity_type=row["industry"],
                     industry=row["industry"],

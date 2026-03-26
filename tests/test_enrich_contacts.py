@@ -162,6 +162,10 @@ def test_enrich_company_persists_contacts() -> None:
     assert first_insert["is_primary"] is True
     assert second_insert["value"] == "hello@site.com"
     assert second_insert["is_primary"] is False
+    company_email_calls = [call for call in session.calls if "primary_email_status" in call[0]]
+    assert company_email_calls
+    assert company_email_calls[-1][1]["primary_email"] == "sales@site.com"
+    assert company_email_calls[-1][1]["primary_email_status"] == "identified"
     status_calls = [call for call in session.calls if "SET status" in call[0]]
     assert status_calls
     assert status_calls[-1][1]["status"] == "contacts_ready"
@@ -192,6 +196,10 @@ def test_enrich_company_marks_not_found() -> None:
     inserted = enricher.enrich_company("company-2", "empty.com", session=session)
 
     assert inserted == []
+    company_email_calls = [call for call in session.calls if "primary_email_status" in call[0]]
+    assert company_email_calls
+    assert company_email_calls[-1][1]["primary_email"] is None
+    assert company_email_calls[-1][1]["primary_email_status"] == "not_found"
     status_calls = [call for call in session.calls if "SET status" in call[0]]
     assert status_calls
     assert status_calls[-1][1]["status"] == "contacts_not_found"

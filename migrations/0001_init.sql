@@ -52,11 +52,13 @@ CREATE INDEX IF NOT EXISTS idx_serp_results_processed ON serp_results (is_proces
 
 CREATE TABLE IF NOT EXISTS companies (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
     canonical_domain TEXT,
     website_url TEXT,
     industry TEXT,
     region TEXT,
+    primary_email TEXT,
+    primary_email_status TEXT NOT NULL DEFAULT 'unknown',
+    primary_email_note TEXT,
     status TEXT NOT NULL DEFAULT 'new',
     dedupe_hash TEXT NOT NULL,
     source_result_id UUID REFERENCES serp_results(id) ON DELETE SET NULL,

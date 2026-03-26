@@ -604,11 +604,13 @@ RETURNING id;
 
 UPSERT_COMPANY_SQL = """
 INSERT INTO companies (
-    name,
     canonical_domain,
     website_url,
     industry,
     region,
+    primary_email,
+    primary_email_status,
+    primary_email_note,
     status,
     dedupe_hash,
     attributes,
@@ -617,11 +619,13 @@ INSERT INTO companies (
     last_seen_at
 )
 VALUES (
-    :name,
     :domain,
     :website_url,
     :industry,
     :region,
+    NULL,
+    'unknown',
+    NULL,
     'new',
     :dedupe_hash,
     CAST(:attributes AS JSONB),
@@ -1163,7 +1167,6 @@ class SerpIngestService:
         session.execute(
             text(UPSERT_COMPANY_SQL),
             {
-                "name": document.title or document.domain,
                 "domain": document.domain or None,
                 "website_url": document.url,
                 "industry": entity_type,

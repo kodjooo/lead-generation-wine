@@ -78,7 +78,7 @@ def normalize_domain(value: str) -> str:
     return domain
 
 
-def build_company_dedupe_key(name: str, domain: str) -> str:
+def build_company_dedupe_key(name: str | None, domain: str | None) -> str:
     """Строит детерминированный ключ дедупликации компании."""
     canonical_domain = normalize_domain(domain)
     payload = canonical_domain or (name or "").strip().lower()

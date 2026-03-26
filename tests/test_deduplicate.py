@@ -25,7 +25,6 @@ class DummySession:
         self.company_rows: Dict[str, Dict[str, Any]] = {
             "1": {
                 "id": "1",
-                "name": "Alpha",
                 "canonical_domain": "alpha.ru",
                 "website_url": "https://alpha.ru",
                 "dedupe_hash": "",
@@ -35,7 +34,6 @@ class DummySession:
             },
             "2": {
                 "id": "2",
-                "name": "Alpha Duplicate",
                 "canonical_domain": None,
                 "website_url": "alpha.ru",
                 "dedupe_hash": "",
@@ -45,7 +43,6 @@ class DummySession:
             },
             "3": {
                 "id": "3",
-                "name": "Beta",
                 "canonical_domain": "beta.ru",
                 "website_url": "https://beta.ru",
                 "dedupe_hash": "",
@@ -61,11 +58,10 @@ class DummySession:
         params = params or {}
         self.executed.append((sql.strip(), params))
 
-        if "SELECT id, name" in sql:
+        if "SELECT id, canonical_domain" in sql:
             rows = [
                 {
                     "id": row["id"],
-                    "name": row["name"],
                     "canonical_domain": row["canonical_domain"],
                     "website_url": row["website_url"],
                     "dedupe_hash": row["dedupe_hash"],

@@ -19,8 +19,8 @@ OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
 class CompanyBrief:
     """Минимальное описание компании для письма."""
 
-    name: str
     domain: str
+    name: Optional[str] = None
     entity_type: Optional[str] = None
     industry: Optional[str] = None
     highlights: List[str] = field(default_factory=list)

@@ -56,7 +56,7 @@ class DeduplicationService:
             session.execute(
                 text(
                     """
-                    SELECT id, name, canonical_domain, website_url, dedupe_hash
+                    SELECT id, canonical_domain, website_url, dedupe_hash
                     FROM companies
                     """
                 )
@@ -65,8 +65,8 @@ class DeduplicationService:
 
         updates = 0
         for row in rows:
-            domain_source = row["canonical_domain"] or row["website_url"] or row["name"]
-            dedupe_hash = build_company_dedupe_key(row["name"], domain_source)
+            domain_source = row["canonical_domain"] or row["website_url"] or str(row["id"])
+            dedupe_hash = build_company_dedupe_key(None, domain_source)
             if dedupe_hash != (row["dedupe_hash"] or ""):
                 session.execute(
                     text(

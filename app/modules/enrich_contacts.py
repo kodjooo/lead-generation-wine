@@ -71,6 +71,15 @@ DO UPDATE SET
 RETURNING id;
 """
 
+UPDATE_COMPANY_PRIMARY_EMAIL_SQL = """
+UPDATE companies
+SET primary_email = :primary_email,
+    primary_email_status = :primary_email_status,
+    primary_email_note = :primary_email_note,
+    updated_at = NOW()
+WHERE id = :company_id;
+"""
+
 
 class ContactEnricher:
     """Извлекает контакты из веб-страниц и сохраняет их в БД."""
@@ -189,12 +198,22 @@ class ContactEnricher:
                     self._save_homepage_excerpt(session, company_id, rendered_html)
 
         if not collected_contacts:
+            session.execute(
+                text(UPDATE_COMPANY_PRIMARY_EMAIL_SQL),
+                {
+                    "company_id": company_id,
+                    "primary_email": None,
+                    "primary_email_status": "not_found",
+                    "primary_email_note": "email_not_found_on_site",
+                },
+            )
             self._mark_company_status(session, company_id, "contacts_not_found")
             LOGGER.info("Контакты для компании %s не найдены.", company_id)
             return []
 
         inserted_ids: List[str] = []
         ranked_contacts = self._rank_contacts(list(collected_contacts.values()), industry=industry)
+        primary_email: str | None = None
         for index, record in enumerate(ranked_contacts):
             cleaned_value = clean_email(record.value)
             if not cleaned_value or not is_valid_email(cleaned_value):
@@ -218,9 +237,23 @@ class ContactEnricher:
                 },
             )
             inserted_ids.append(str(result.scalar_one()))
+            if index == 0:
+                primary_email = cleaned_value
+
+        session.execute(
+            text(UPDATE_COMPANY_PRIMARY_EMAIL_SQL),
+            {
+                "company_id": company_id,
+                "primary_email": primary_email,
+                "primary_email_status": "identified" if primary_email else "not_found",
+                "primary_email_note": None if primary_email else "no_valid_primary_email_after_ranking",
+            },
+        )
 
         if inserted_ids:
             self._mark_company_status(session, company_id, "contacts_ready")
+        else:
+            self._mark_company_status(session, company_id, "contacts_not_found")
 
         return inserted_ids
 
