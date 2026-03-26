@@ -153,8 +153,8 @@ services:
 1. **Подготовка сервера:** установите Docker и docker compose plugin, создайте отдельного пользователя без root.
 2. **Клонируйте репозиторий:**
    ```bash
-   git clone https://github.com/kodjooo/lead-generation.git
-   cd lead-generation
+   git clone https://github.com/kodjooo/lead-generation-wine.git
+   cd lead-generation-wine
    cp .env.example .env
    ```
 3. **Заполните `.env`:** пропишите ключи Yandex и Google, Gmail `GMAIL_*` (App Password) и Яндекс `YANDEX_*` параметры, активируйте `ROUTING_ENABLED=true`, установите `EMAIL_SENDING_ENABLED=true`.
@@ -180,7 +180,7 @@ services:
    git pull
    docker compose up -d --build
    ```
-   Если есть новые миграции — повторите шаг 4.
+   Если есть новые миграции — повторите шаг 5.
 8. **Мониторинг:**
    ```bash
    docker compose logs -f app
