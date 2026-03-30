@@ -1,20 +1,20 @@
 ТЗ: внешний LLM gateway как thin relay
 
 1. Цель
-Вынести сетевой доступ к OpenAI на второй сервер, не дублируя prompt и бизнес-логику site classification. Основной pipeline должен сам собирать полный OpenAI payload и сам разбирать ответ модели.
+Вынести сетевой доступ к OpenAI на второй сервер, не дублируя prompt и бизнес-логику site classification. Основной pipeline сам собирает полный OpenAI payload и сам разбирает ответ модели.
 
 2. Что должен делать gateway
-- Принимать `POST /v1/openai/chat-completions`.
+- Принимать `POST /v1/openai/responses`.
 - Проверять Bearer-токен.
-- Принимать OpenAI-совместимый payload с `messages`, `model`, `response_format` и другими полями.
+- Принимать OpenAI-совместимый payload с `input`, `model`, `text.format` и другими полями.
 - Отправлять payload в OpenAI без изменения prompt.
-- Возвращать raw JSON-ответ `chat.completion`.
+- Возвращать raw JSON-ответ `response`.
 
 3. Чего gateway делать не должен
 - Не добавлять свой system prompt.
-- Не собирать `site_verdict` из собственного шаблона.
-- Не хранить бизнес-правила mall / real_estate_agency.
+- Не хранить бизнес-правила `mall` / `real_estate_agency`.
 - Не нормализовать ответ в доменный JSON.
+- Не менять `input`, `text.format` или другие OpenAI-поля.
 
 4. Авторизация
 - На основном сервере: `SITE_CLASSIFICATION_LLM_GATEWAY_API_KEY`
@@ -22,15 +22,15 @@
 - Формат: `Authorization: Bearer <token>`
 
 5. Endpoint
-`POST /v1/openai/chat-completions`
+`POST /v1/openai/responses`
 
 6. Пример payload
 ```json
 {
   "model": "gpt-5-mini",
-  "response_format": {
-    "type": "json_schema",
-    "json_schema": {
+  "text": {
+    "format": {
+      "type": "json_schema",
       "name": "SiteClassification",
       "schema": {
         "type": "object",
@@ -44,9 +44,19 @@
       }
     }
   },
-  "messages": [
-    {"role": "system", "content": "Определи тип сайта по контексту и верни только JSON."},
-    {"role": "user", "content": "{\"domain\":\"verno.pro\",\"expected_city\":\"Краснодар\"}"}
+  "input": [
+    {
+      "role": "system",
+      "content": [
+        {"type": "input_text", "text": "Определи тип сайта по контексту и верни только JSON."}
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {"type": "input_text", "text": "{\"domain\":\"verno.pro\",\"expected_city\":\"Краснодар\"}"}
+      ]
+    }
   ]
 }
 ```
@@ -55,19 +65,10 @@
 Gateway возвращает raw OpenAI JSON:
 ```json
 {
-  "id": "chatcmpl-123",
-  "object": "chat.completion",
+  "id": "resp-123",
+  "object": "response",
   "model": "gpt-5-mini",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": "{\"site_verdict\":\"official_real_estate_agency_site\",\"detected_city\":\"Краснодар\",\"confidence\":0.94,\"reason\":\"...\"}"
-      },
-      "finish_reason": "stop"
-    }
-  ]
+  "output_text": "{\"site_verdict\":\"official_real_estate_agency_site\",\"detected_city\":\"Краснодар\",\"confidence\":0.94,\"reason\":\"...\"}"
 }
 ```
 
@@ -77,11 +78,3 @@ Gateway возвращает raw OpenAI JSON:
 - `429` rate_limit_exceeded
 - `502` upstream_invalid_response
 - `504` upstream_timeout
-
-9. Интеграция в текущий pipeline
-- `SITE_CLASSIFICATION_LLM_ENABLED=true`
-- `SITE_CLASSIFICATION_LLM_PROVIDER=gateway`
-- `SITE_CLASSIFICATION_LLM_GATEWAY_URL=https://<gateway-host>`
-- `SITE_CLASSIFICATION_LLM_GATEWAY_API_KEY=<token>`
-
-При таком режиме `lead-generation-wine` формирует тот же payload, который раньше отправлял бы в OpenAI напрямую, а gateway выступает только транспортным слоем.

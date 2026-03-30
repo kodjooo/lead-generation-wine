@@ -1,4 +1,4 @@
-"""Обработка XML-ответов Yandex Search и сохранение релевантных результатов."""
+﻿"""РћР±СЂР°Р±РѕС‚РєР° XML-РѕС‚РІРµС‚РѕРІ Yandex Search Рё СЃРѕС…СЂР°РЅРµРЅРёРµ СЂРµР»РµРІР°РЅС‚РЅС‹С… СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ."""
 
 from __future__ import annotations
 
@@ -23,36 +23,36 @@ from app.modules.utils.db import get_session_factory, session_scope
 from app.modules.utils.normalize import clean_snippet, normalize_domain, normalize_url
 
 LOGGER = logging.getLogger("app.serp_ingest")
-OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
-SITE_CLASSIFICATION_GATEWAY_PATH = "/v1/openai/chat-completions"
+OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
+SITE_CLASSIFICATION_GATEWAY_PATH = "/v1/openai/responses"
 OPENAI_LLM_TIMEOUT_SECONDS = 45.0
 OPENAI_LLM_MAX_ATTEMPTS = 3
 
 EXCLUDED_DOMAIN_SUFFIXES = tuple(sorted(EXCLUDED_DOMAINS))
 COMMON_NEGATIVE_MARKERS = (
-    "каталог",
-    "справочник",
-    "отзывы",
-    "афиша",
-    "объявления",
-    "агрегатор",
+    "РєР°С‚Р°Р»РѕРі",
+    "СЃРїСЂР°РІРѕС‡РЅРёРє",
+    "РѕС‚Р·С‹РІС‹",
+    "Р°С„РёС€Р°",
+    "РѕР±СЉСЏРІР»РµРЅРёСЏ",
+    "Р°РіСЂРµРіР°С‚РѕСЂ",
     "listing",
     "directory",
     "marketplace",
-    "рейтинг",
-    "подборка",
-    "лучшие",
-    "список",
+    "СЂРµР№С‚РёРЅРі",
+    "РїРѕРґР±РѕСЂРєР°",
+    "Р»СѓС‡С€РёРµ",
+    "СЃРїРёСЃРѕРє",
 )
 AGENCY_HOMEPAGE_NEGATIVE_MARKERS = (
-    "рейтинг агентств",
-    "лучшие агентства",
-    "список агентств",
-    "каталог агентств",
-    "агрегатор недвижимости",
-    "база объявлений",
-    "разместить объявление",
-    "доска объявлений",
+    "СЂРµР№С‚РёРЅРі Р°РіРµРЅС‚СЃС‚РІ",
+    "Р»СѓС‡С€РёРµ Р°РіРµРЅС‚СЃС‚РІР°",
+    "СЃРїРёСЃРѕРє Р°РіРµРЅС‚СЃС‚РІ",
+    "РєР°С‚Р°Р»РѕРі Р°РіРµРЅС‚СЃС‚РІ",
+    "Р°РіСЂРµРіР°С‚РѕСЂ РЅРµРґРІРёР¶РёРјРѕСЃС‚Рё",
+    "Р±Р°Р·Р° РѕР±СЉСЏРІР»РµРЅРёР№",
+    "СЂР°Р·РјРµСЃС‚РёС‚СЊ РѕР±СЉСЏРІР»РµРЅРёРµ",
+    "РґРѕСЃРєР° РѕР±СЉСЏРІР»РµРЅРёР№",
     "marketplace",
 )
 AGGREGATOR_URL_PATTERNS = (
@@ -76,82 +76,82 @@ AGGREGATOR_URL_PATTERNS = (
     "/list/",
 )
 MALL_IDENTITY_MARKERS = (
-    "торговый центр",
-    "торгово-развлекательный центр",
-    "трц",
-    "тц",
-    "трк",
-    "молл",
+    "С‚РѕСЂРіРѕРІС‹Р№ С†РµРЅС‚СЂ",
+    "С‚РѕСЂРіРѕРІРѕ-СЂР°Р·РІР»РµРєР°С‚РµР»СЊРЅС‹Р№ С†РµРЅС‚СЂ",
+    "С‚СЂС†",
+    "С‚С†",
+    "С‚СЂРє",
+    "РјРѕР»Р»",
     "mall",
 )
 MALL_OPERATIONAL_MARKERS = (
-    "магазин",
-    "время работы",
-    "как добраться",
-    "арендаторам",
-    "аренда",
-    "развлечен",
-    "фудкорт",
-    "кино",
-    "схема",
-    "контакты",
-    "парковк",
-    "красная площадь",
+    "РјР°РіР°Р·РёРЅ",
+    "РІСЂРµРјСЏ СЂР°Р±РѕС‚С‹",
+    "РєР°Рє РґРѕР±СЂР°С‚СЊСЃСЏ",
+    "Р°СЂРµРЅРґР°С‚РѕСЂР°Рј",
+    "Р°СЂРµРЅРґР°",
+    "СЂР°Р·РІР»РµС‡РµРЅ",
+    "С„СѓРґРєРѕСЂС‚",
+    "РєРёРЅРѕ",
+    "СЃС…РµРјР°",
+    "РєРѕРЅС‚Р°РєС‚С‹",
+    "РїР°СЂРєРѕРІРє",
+    "РєСЂР°СЃРЅР°СЏ РїР»РѕС‰Р°РґСЊ",
     "red square",
 )
 MALL_NEGATIVE_MARKERS = (
-    "все торговые центры",
-    "каталог торговых центров",
-    "рейтинг торговых центров",
-    "торговые центры краснодара",
-    "подборка торговых центров",
+    "РІСЃРµ С‚РѕСЂРіРѕРІС‹Рµ С†РµРЅС‚СЂС‹",
+    "РєР°С‚Р°Р»РѕРі С‚РѕСЂРіРѕРІС‹С… С†РµРЅС‚СЂРѕРІ",
+    "СЂРµР№С‚РёРЅРі С‚РѕСЂРіРѕРІС‹С… С†РµРЅС‚СЂРѕРІ",
+    "С‚РѕСЂРіРѕРІС‹Рµ С†РµРЅС‚СЂС‹ РєСЂР°СЃРЅРѕРґР°СЂР°",
+    "РїРѕРґР±РѕСЂРєР° С‚РѕСЂРіРѕРІС‹С… С†РµРЅС‚СЂРѕРІ",
 )
 AGENCY_IDENTITY_MARKERS = (
-    "агентство недвижимости",
-    "риэлтор",
-    "риелтор",
-    "риэлт",
-    "риелт",
-    "недвижимость",
+    "Р°РіРµРЅС‚СЃС‚РІРѕ РЅРµРґРІРёР¶РёРјРѕСЃС‚Рё",
+    "СЂРёСЌР»С‚РѕСЂ",
+    "СЂРёРµР»С‚РѕСЂ",
+    "СЂРёСЌР»С‚",
+    "СЂРёРµР»С‚",
+    "РЅРµРґРІРёР¶РёРјРѕСЃС‚СЊ",
 )
 AGENCY_OPERATIONAL_MARKERS = (
-    "объекты",
-    "новострой",
-    "ипотека",
-    "купить",
-    "продать",
-    "аренда",
-    "квартир",
-    "дом",
-    "коммерческая недвижимость",
-    "оставить заявку",
-    "подобрать",
-    "контакты",
-    "вторич",
-    "специалист по недвижимости",
-    "эксперт по недвижимости",
-    "покупка недвижимости",
-    "продажа недвижимости",
-    "сдать недвижимость",
-    "снять недвижимость",
+    "РѕР±СЉРµРєС‚С‹",
+    "РЅРѕРІРѕСЃС‚СЂРѕР№",
+    "РёРїРѕС‚РµРєР°",
+    "РєСѓРїРёС‚СЊ",
+    "РїСЂРѕРґР°С‚СЊ",
+    "Р°СЂРµРЅРґР°",
+    "РєРІР°СЂС‚РёСЂ",
+    "РґРѕРј",
+    "РєРѕРјРјРµСЂС‡РµСЃРєР°СЏ РЅРµРґРІРёР¶РёРјРѕСЃС‚СЊ",
+    "РѕСЃС‚Р°РІРёС‚СЊ Р·Р°СЏРІРєСѓ",
+    "РїРѕРґРѕР±СЂР°С‚СЊ",
+    "РєРѕРЅС‚Р°РєС‚С‹",
+    "РІС‚РѕСЂРёС‡",
+    "СЃРїРµС†РёР°Р»РёСЃС‚ РїРѕ РЅРµРґРІРёР¶РёРјРѕСЃС‚Рё",
+    "СЌРєСЃРїРµСЂС‚ РїРѕ РЅРµРґРІРёР¶РёРјРѕСЃС‚Рё",
+    "РїРѕРєСѓРїРєР° РЅРµРґРІРёР¶РёРјРѕСЃС‚Рё",
+    "РїСЂРѕРґР°Р¶Р° РЅРµРґРІРёР¶РёРјРѕСЃС‚Рё",
+    "СЃРґР°С‚СЊ РЅРµРґРІРёР¶РёРјРѕСЃС‚СЊ",
+    "СЃРЅСЏС‚СЊ РЅРµРґРІРёР¶РёРјРѕСЃС‚СЊ",
 )
 AGENCY_NEGATIVE_MARKERS = (
-    "лучшие агентства",
-    "рейтинг агентств",
-    "список агентств",
-    "каталог агентств",
-    "объявления",
+    "Р»СѓС‡С€РёРµ Р°РіРµРЅС‚СЃС‚РІР°",
+    "СЂРµР№С‚РёРЅРі Р°РіРµРЅС‚СЃС‚РІ",
+    "СЃРїРёСЃРѕРє Р°РіРµРЅС‚СЃС‚РІ",
+    "РєР°С‚Р°Р»РѕРі Р°РіРµРЅС‚СЃС‚РІ",
+    "РѕР±СЉСЏРІР»РµРЅРёСЏ",
 )
 AGENCY_DEVELOPER_MARKERS = (
-    "застройщик",
-    "девелоп",
+    "Р·Р°СЃС‚СЂРѕР№С‰РёРє",
+    "РґРµРІРµР»РѕРї",
     "development",
-    "жилой комплекс",
-    "жк ",
-    "жк.",
-    "квартиры от застройщика",
-    "новостройки от застройщика",
-    "строительная компания",
+    "Р¶РёР»РѕР№ РєРѕРјРїР»РµРєСЃ",
+    "Р¶Рє ",
+    "Р¶Рє.",
+    "РєРІР°СЂС‚РёСЂС‹ РѕС‚ Р·Р°СЃС‚СЂРѕР№С‰РёРєР°",
+    "РЅРѕРІРѕСЃС‚СЂРѕР№РєРё РѕС‚ Р·Р°СЃС‚СЂРѕР№С‰РёРєР°",
+    "СЃС‚СЂРѕРёС‚РµР»СЊРЅР°СЏ РєРѕРјРїР°РЅРёСЏ",
 )
 MALL_DOMAIN_MARKERS = (
     "mall",
@@ -181,18 +181,18 @@ AGENCY_DOMAIN_MARKERS = (
     "an-",
 )
 AGENCY_BRAND_MARKERS = (
-    "этажи",
-    "аякс",
-    "каян",
-    "владис",
+    "СЌС‚Р°Р¶Рё",
+    "Р°СЏРєСЃ",
+    "РєР°СЏРЅ",
+    "РІР»Р°РґРёСЃ",
     "century 21",
-    "гауди риелт",
-    "смартриэлт",
-    "смарт риэлт",
-    "виконта риэлт",
-    "центр юг",
-    "югреалт",
-    "новометр",
+    "РіР°СѓРґРё СЂРёРµР»С‚",
+    "СЃРјР°СЂС‚СЂРёСЌР»С‚",
+    "СЃРјР°СЂС‚ СЂРёСЌР»С‚",
+    "РІРёРєРѕРЅС‚Р° СЂРёСЌР»С‚",
+    "С†РµРЅС‚СЂ СЋРі",
+    "СЋРіСЂРµР°Р»С‚",
+    "РЅРѕРІРѕРјРµС‚СЂ",
 )
 AGENCY_BRAND_DOMAIN_MARKERS = (
     "etagi.com",
@@ -221,29 +221,29 @@ AGENCY_EXCLUDED_DOMAINS = {
     "tochno.life",
 }
 KNOWN_RU_CITIES = (
-    "Москва",
-    "Санкт-Петербург",
-    "Краснодар",
-    "Сочи",
-    "Ростов-на-Дону",
-    "Казань",
-    "Екатеринбург",
-    "Новосибирск",
-    "Нижний Новгород",
-    "Самара",
-    "Воронеж",
-    "Уфа",
-    "Пермь",
-    "Челябинск",
-    "Омск",
-    "Красноярск",
-    "Волгоград",
-    "Тюмень",
-    "Ижевск",
-    "Ставрополь",
-    "Новороссийск",
-    "Анапа",
-    "Геленджик",
+    "РњРѕСЃРєРІР°",
+    "РЎР°РЅРєС‚-РџРµС‚РµСЂР±СѓСЂРі",
+    "РљСЂР°СЃРЅРѕРґР°СЂ",
+    "РЎРѕС‡Рё",
+    "Р РѕСЃС‚РѕРІ-РЅР°-Р”РѕРЅСѓ",
+    "РљР°Р·Р°РЅСЊ",
+    "Р•РєР°С‚РµСЂРёРЅР±СѓСЂРі",
+    "РќРѕРІРѕСЃРёР±РёСЂСЃРє",
+    "РќРёР¶РЅРёР№ РќРѕРІРіРѕСЂРѕРґ",
+    "РЎР°РјР°СЂР°",
+    "Р’РѕСЂРѕРЅРµР¶",
+    "РЈС„Р°",
+    "РџРµСЂРјСЊ",
+    "Р§РµР»СЏР±РёРЅСЃРє",
+    "РћРјСЃРє",
+    "РљСЂР°СЃРЅРѕСЏСЂСЃРє",
+    "Р’РѕР»РіРѕРіСЂР°Рґ",
+    "РўСЋРјРµРЅСЊ",
+    "РР¶РµРІСЃРє",
+    "РЎС‚Р°РІСЂРѕРїРѕР»СЊ",
+    "РќРѕРІРѕСЂРѕСЃСЃРёР№СЃРє",
+    "РђРЅР°РїР°",
+    "Р“РµР»РµРЅРґР¶РёРє",
 )
 
 
@@ -284,7 +284,7 @@ def _domain_has_any(domain: str, markers: tuple[str, ...]) -> bool:
 
 @dataclass
 class ScreeningDecision:
-    """Результат фильтрации кандидата."""
+    """Р РµР·СѓР»СЊС‚Р°С‚ С„РёР»СЊС‚СЂР°С†РёРё РєР°РЅРґРёРґР°С‚Р°."""
 
     is_relevant: bool
     score: float
@@ -293,12 +293,12 @@ class ScreeningDecision:
 
 
 class SerpParseError(RuntimeError):
-    """Ошибка парсинга XML-ответа."""
+    """РћС€РёР±РєР° РїР°СЂСЃРёРЅРіР° XML-РѕС‚РІРµС‚Р°."""
 
 
 @dataclass
 class SerpDocument:
-    """Нормализованный документ выдачи."""
+    """РќРѕСЂРјР°Р»РёР·РѕРІР°РЅРЅС‹Р№ РґРѕРєСѓРјРµРЅС‚ РІС‹РґР°С‡Рё."""
 
     url: str
     domain: str
@@ -310,7 +310,7 @@ class SerpDocument:
 
 @dataclass
 class CityDetection:
-    """Результат определения фактического города сайта."""
+    """Р РµР·СѓР»СЊС‚Р°С‚ РѕРїСЂРµРґРµР»РµРЅРёСЏ С„Р°РєС‚РёС‡РµСЃРєРѕРіРѕ РіРѕСЂРѕРґР° СЃР°Р№С‚Р°."""
 
     detected_city: Optional[str]
     score: float
@@ -319,7 +319,7 @@ class CityDetection:
 
 @dataclass
 class SiteClassificationDecision:
-    """Результат комплексной LLM-классификации сайта."""
+    """Р РµР·СѓР»СЊС‚Р°С‚ РєРѕРјРїР»РµРєСЃРЅРѕР№ LLM-РєР»Р°СЃСЃРёС„РёРєР°С†РёРё СЃР°Р№С‚Р°."""
 
     site_verdict: Optional[str]
     detected_city: Optional[str]
@@ -329,7 +329,7 @@ class SiteClassificationDecision:
 
 @dataclass
 class ScreenedCandidate:
-    """Кандидат, полностью проверенный до записи в БД."""
+    """РљР°РЅРґРёРґР°С‚, РїРѕР»РЅРѕСЃС‚СЊСЋ РїСЂРѕРІРµСЂРµРЅРЅС‹Р№ РґРѕ Р·Р°РїРёСЃРё РІ Р‘Р”."""
 
     document: SerpDocument
     serp_decision: ScreeningDecision
@@ -349,8 +349,36 @@ def _strip_code_fences(content: str) -> str:
     return normalized.strip()
 
 
+def _extract_responses_output_text(payload: dict[str, object]) -> str:
+    output_text = payload.get("output_text")
+    if isinstance(output_text, str) and output_text.strip():
+        return output_text
+
+    output = payload.get("output")
+    if not isinstance(output, list):
+        raise KeyError("Responses payload does not contain output text")
+
+    chunks: list[str] = []
+    for item in output:
+        if not isinstance(item, dict) or item.get("type") != "message":
+            continue
+        content = item.get("content")
+        if not isinstance(content, list):
+            continue
+        for part in content:
+            if not isinstance(part, dict):
+                continue
+            text_value = part.get("text")
+            if isinstance(text_value, str) and text_value.strip():
+                chunks.append(text_value)
+
+    if not chunks:
+        raise KeyError("Responses payload does not contain output text")
+    return "\n".join(chunks)
+
+
 def evaluate_serp_document(document: "SerpDocument", expected_entity_type: str | None) -> ScreeningDecision:
-    """Предварительно оценивает документ по данным SERP."""
+    """РџСЂРµРґРІР°СЂРёС‚РµР»СЊРЅРѕ РѕС†РµРЅРёРІР°РµС‚ РґРѕРєСѓРјРµРЅС‚ РїРѕ РґР°РЅРЅС‹Рј SERP."""
     title = _normalize_text(document.title)
     snippet = _normalize_text(document.snippet)
     url = _normalize_text(document.url)
@@ -365,7 +393,7 @@ def evaluate_serp_document(document: "SerpDocument", expected_entity_type: str |
         return ScreeningDecision(False, 0.0, "aggregator_url_pattern")
 
     score = 0.0
-    if "официаль" in haystack:
+    if "РѕС„РёС†РёР°Р»СЊ" in haystack:
         score += 3.0
 
     if expected_entity_type == "mall":
@@ -403,7 +431,7 @@ def evaluate_serp_document(document: "SerpDocument", expected_entity_type: str |
 
 
 def evaluate_homepage_content(content: str, entity_type: str | None, *, domain: str | None = None) -> ScreeningDecision:
-    """Финально подтверждает, что домен похож на официальный сайт нужного типа."""
+    """Р¤РёРЅР°Р»СЊРЅРѕ РїРѕРґС‚РІРµСЂР¶РґР°РµС‚, С‡С‚Рѕ РґРѕРјРµРЅ РїРѕС…РѕР¶ РЅР° РѕС„РёС†РёР°Р»СЊРЅС‹Р№ СЃР°Р№С‚ РЅСѓР¶РЅРѕРіРѕ С‚РёРїР°."""
     haystack = _normalize_text(content)
     if not haystack:
         return ScreeningDecision(False, 0.0, "empty_homepage")
@@ -453,7 +481,7 @@ def evaluate_homepage_content(content: str, entity_type: str | None, *, domain: 
 
 def _city_pattern(city: str) -> re.Pattern[str]:
     normalized = re.escape(_normalize_text(city))
-    return re.compile(rf"(?<![a-zа-я0-9]){normalized}(?![a-zа-я0-9])")
+    return re.compile(rf"(?<![a-zР°-СЏ0-9]){normalized}(?![a-zР°-СЏ0-9])")
 
 
 def detect_actual_city(
@@ -462,7 +490,7 @@ def detect_actual_city(
     document: SerpDocument,
     homepage_content: str | None,
 ) -> CityDetection:
-    """Определяет фактический город по SERP и homepage-контенту."""
+    """РћРїСЂРµРґРµР»СЏРµС‚ С„Р°РєС‚РёС‡РµСЃРєРёР№ РіРѕСЂРѕРґ РїРѕ SERP Рё homepage-РєРѕРЅС‚РµРЅС‚Сѓ."""
     candidates: list[str] = []
     if expected_city:
         candidates.append(expected_city)
@@ -484,7 +512,7 @@ def detect_actual_city(
         if homepage_haystack and pattern.search(homepage_haystack):
             score += 3.0
             source = "homepage"
-            if f"г { _normalize_text(city) }" in homepage_haystack or f"город { _normalize_text(city) }" in homepage_haystack:
+            if f"Рі { _normalize_text(city) }" in homepage_haystack or f"РіРѕСЂРѕРґ { _normalize_text(city) }" in homepage_haystack:
                 score += 1.0
 
         if serp_haystack and pattern.search(serp_haystack):
@@ -504,43 +532,43 @@ def detect_actual_city(
 def _llm_guidance_for_entity_type(expected_entity_type: str | None) -> str:
     if expected_entity_type == "real_estate_agency":
         return (
-            "Для ниши real_estate_agency признай сайт официальным агентством недвижимости только если есть "
-            "сильные признаки посреднических услуг: агенты или риэлторы, подбор/покупка/продажа/аренда "
-            "недвижимости для клиентов, ипотека, сопровождение сделки, каталог собственных объектов агентства, "
-            "офисы и контакты агентства. Не признавай агентством сайты застройщиков, жилых комплексов, "
-            "витрины новостроек от девелопера, классифайды, каталоги агентств, рейтинги, медиа и статьи. "
-            "Если домен относится к сетевому бренду агентств, филиалу или региональному поддомену, это допустимо. "
-            "Город определяй по адресу офиса, контактам, локальному поддомену/пути, а не по списку городов сети."
+            "Р”Р»СЏ РЅРёС€Рё real_estate_agency РїСЂРёР·РЅР°Р№ СЃР°Р№С‚ РѕС„РёС†РёР°Р»СЊРЅС‹Рј Р°РіРµРЅС‚СЃС‚РІРѕРј РЅРµРґРІРёР¶РёРјРѕСЃС‚Рё С‚РѕР»СЊРєРѕ РµСЃР»Рё РµСЃС‚СЊ "
+            "СЃРёР»СЊРЅС‹Рµ РїСЂРёР·РЅР°РєРё РїРѕСЃСЂРµРґРЅРёС‡РµСЃРєРёС… СѓСЃР»СѓРі: Р°РіРµРЅС‚С‹ РёР»Рё СЂРёСЌР»С‚РѕСЂС‹, РїРѕРґР±РѕСЂ/РїРѕРєСѓРїРєР°/РїСЂРѕРґР°Р¶Р°/Р°СЂРµРЅРґР° "
+            "РЅРµРґРІРёР¶РёРјРѕСЃС‚Рё РґР»СЏ РєР»РёРµРЅС‚РѕРІ, РёРїРѕС‚РµРєР°, СЃРѕРїСЂРѕРІРѕР¶РґРµРЅРёРµ СЃРґРµР»РєРё, РєР°С‚Р°Р»РѕРі СЃРѕР±СЃС‚РІРµРЅРЅС‹С… РѕР±СЉРµРєС‚РѕРІ Р°РіРµРЅС‚СЃС‚РІР°, "
+            "РѕС„РёСЃС‹ Рё РєРѕРЅС‚Р°РєС‚С‹ Р°РіРµРЅС‚СЃС‚РІР°. РќРµ РїСЂРёР·РЅР°РІР°Р№ Р°РіРµРЅС‚СЃС‚РІРѕРј СЃР°Р№С‚С‹ Р·Р°СЃС‚СЂРѕР№С‰РёРєРѕРІ, Р¶РёР»С‹С… РєРѕРјРїР»РµРєСЃРѕРІ, "
+            "РІРёС‚СЂРёРЅС‹ РЅРѕРІРѕСЃС‚СЂРѕРµРє РѕС‚ РґРµРІРµР»РѕРїРµСЂР°, РєР»Р°СЃСЃРёС„Р°Р№РґС‹, РєР°С‚Р°Р»РѕРіРё Р°РіРµРЅС‚СЃС‚РІ, СЂРµР№С‚РёРЅРіРё, РјРµРґРёР° Рё СЃС‚Р°С‚СЊРё. "
+            "Р•СЃР»Рё РґРѕРјРµРЅ РѕС‚РЅРѕСЃРёС‚СЃСЏ Рє СЃРµС‚РµРІРѕРјСѓ Р±СЂРµРЅРґСѓ Р°РіРµРЅС‚СЃС‚РІ, С„РёР»РёР°Р»Сѓ РёР»Рё СЂРµРіРёРѕРЅР°Р»СЊРЅРѕРјСѓ РїРѕРґРґРѕРјРµРЅСѓ, СЌС‚Рѕ РґРѕРїСѓСЃС‚РёРјРѕ. "
+            "Р“РѕСЂРѕРґ РѕРїСЂРµРґРµР»СЏР№ РїРѕ Р°РґСЂРµСЃСѓ РѕС„РёСЃР°, РєРѕРЅС‚Р°РєС‚Р°Рј, Р»РѕРєР°Р»СЊРЅРѕРјСѓ РїРѕРґРґРѕРјРµРЅСѓ/РїСѓС‚Рё, Р° РЅРµ РїРѕ СЃРїРёСЃРєСѓ РіРѕСЂРѕРґРѕРІ СЃРµС‚Рё."
         )
     if expected_entity_type == "mall":
         return (
-            "Для ниши mall признай сайт официальным торговым центром только если сайт описывает сам ТЦ/ТРЦ: "
-            "магазины, арендаторы, аренда площадей, схема, как добраться, время работы, контакты центра. "
-            "Не признавай mall сайтом арендатора, магазина, детского центра, ресторана, афиши, каталога или статьи. "
-            "Город определяй по адресу и контактам конкретного объекта, а не по списку филиалов."
+            "Р”Р»СЏ РЅРёС€Рё mall РїСЂРёР·РЅР°Р№ СЃР°Р№С‚ РѕС„РёС†РёР°Р»СЊРЅС‹Рј С‚РѕСЂРіРѕРІС‹Рј С†РµРЅС‚СЂРѕРј С‚РѕР»СЊРєРѕ РµСЃР»Рё СЃР°Р№С‚ РѕРїРёСЃС‹РІР°РµС‚ СЃР°Рј РўР¦/РўР Р¦: "
+            "РјР°РіР°Р·РёРЅС‹, Р°СЂРµРЅРґР°С‚РѕСЂС‹, Р°СЂРµРЅРґР° РїР»РѕС‰Р°РґРµР№, СЃС…РµРјР°, РєР°Рє РґРѕР±СЂР°С‚СЊСЃСЏ, РІСЂРµРјСЏ СЂР°Р±РѕС‚С‹, РєРѕРЅС‚Р°РєС‚С‹ С†РµРЅС‚СЂР°. "
+            "РќРµ РїСЂРёР·РЅР°РІР°Р№ mall СЃР°Р№С‚РѕРј Р°СЂРµРЅРґР°С‚РѕСЂР°, РјР°РіР°Р·РёРЅР°, РґРµС‚СЃРєРѕРіРѕ С†РµРЅС‚СЂР°, СЂРµСЃС‚РѕСЂР°РЅР°, Р°С„РёС€Рё, РєР°С‚Р°Р»РѕРіР° РёР»Рё СЃС‚Р°С‚СЊРё. "
+            "Р“РѕСЂРѕРґ РѕРїСЂРµРґРµР»СЏР№ РїРѕ Р°РґСЂРµСЃСѓ Рё РєРѕРЅС‚Р°РєС‚Р°Рј РєРѕРЅРєСЂРµС‚РЅРѕРіРѕ РѕР±СЉРµРєС‚Р°, Р° РЅРµ РїРѕ СЃРїРёСЃРєСѓ С„РёР»РёР°Р»РѕРІ."
         )
     return (
-        "Определи тип сайта и фактический город только по переданному контексту. "
-        "Не путай локальный объект с каталогом, медиа или агрегатором."
+        "РћРїСЂРµРґРµР»Рё С‚РёРї СЃР°Р№С‚Р° Рё С„Р°РєС‚РёС‡РµСЃРєРёР№ РіРѕСЂРѕРґ С‚РѕР»СЊРєРѕ РїРѕ РїРµСЂРµРґР°РЅРЅРѕРјСѓ РєРѕРЅС‚РµРєСЃС‚Сѓ. "
+        "РќРµ РїСѓС‚Р°Р№ Р»РѕРєР°Р»СЊРЅС‹Р№ РѕР±СЉРµРєС‚ СЃ РєР°С‚Р°Р»РѕРіРѕРј, РјРµРґРёР° РёР»Рё Р°РіСЂРµРіР°С‚РѕСЂРѕРј."
     )
 
 
 def parse_serp_xml(xml_payload: bytes) -> List[SerpDocument]:
-    """Извлекает документы из XML-ответа Yandex Search."""
+    """РР·РІР»РµРєР°РµС‚ РґРѕРєСѓРјРµРЅС‚С‹ РёР· XML-РѕС‚РІРµС‚Р° Yandex Search."""
     if not xml_payload:
         return []
 
     try:
         root = ET.fromstring(xml_payload)
     except ET.ParseError as exc:
-        raise SerpParseError("Некорректный XML выдачи.") from exc
+        raise SerpParseError("РќРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ XML РІС‹РґР°С‡Рё.") from exc
 
     documents: List[SerpDocument] = []
     for position, doc in enumerate(root.findall(".//doc"), start=1):
         url_text = (doc.findtext("url") or doc.findtext("lurl") or "").strip()
         normalized_url = normalize_url(url_text)
         if not normalized_url:
-            LOGGER.debug("Пропущен документ без корректного URL: %s", url_text)
+            LOGGER.debug("РџСЂРѕРїСѓС‰РµРЅ РґРѕРєСѓРјРµРЅС‚ Р±РµР· РєРѕСЂСЂРµРєС‚РЅРѕРіРѕ URL: %s", url_text)
             continue
 
         domain_text = doc.findtext("domain") or ""
@@ -650,7 +678,7 @@ RETURNING id;
 
 
 class SerpIngestService:
-    """Сохраняет релевантные документы выдачи в БД."""
+    """РЎРѕС…СЂР°РЅСЏРµС‚ СЂРµР»РµРІР°РЅС‚РЅС‹Рµ РґРѕРєСѓРјРµРЅС‚С‹ РІС‹РґР°С‡Рё РІ Р‘Р”."""
 
     def __init__(
         self,
@@ -685,10 +713,10 @@ class SerpIngestService:
         yandex_operation_id: str | None = None,
         query_metadata: Optional[dict] = None,
     ) -> List[str]:
-        """Парсит и сохраняет только релевантные результаты выдачи."""
+        """РџР°СЂСЃРёС‚ Рё СЃРѕС…СЂР°РЅСЏРµС‚ С‚РѕР»СЊРєРѕ СЂРµР»РµРІР°РЅС‚РЅС‹Рµ СЂРµР·СѓР»СЊС‚Р°С‚С‹ РІС‹РґР°С‡Рё."""
         documents = parse_serp_xml(xml_payload)
         if not documents:
-            LOGGER.info("Операция %s не содержит документов для сохранения.", operation_db_id)
+            LOGGER.info("РћРїРµСЂР°С†РёСЏ %s РЅРµ СЃРѕРґРµСЂР¶РёС‚ РґРѕРєСѓРјРµРЅС‚РѕРІ РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ.", operation_db_id)
             return []
 
         query_metadata = query_metadata or {}
@@ -702,7 +730,7 @@ class SerpIngestService:
             serp_decision = evaluate_serp_document(document, entity_type)
             if not serp_decision.is_relevant:
                 LOGGER.debug(
-                    "Документ %s отброшен на этапе SERP: entity_type=%s reason=%s",
+                    "Р”РѕРєСѓРјРµРЅС‚ %s РѕС‚Р±СЂРѕС€РµРЅ РЅР° СЌС‚Р°РїРµ SERP: entity_type=%s reason=%s",
                     document.url,
                     entity_type,
                     serp_decision.reason,
@@ -774,7 +802,7 @@ class SerpIngestService:
         homepage_decision = self._evaluate_homepage(document.domain, entity_type, homepage_content)
         if not homepage_decision.is_relevant:
             LOGGER.debug(
-                "Документ %s отброшен на этапе homepage verification: entity_type=%s reason=%s",
+                "Р”РѕРєСѓРјРµРЅС‚ %s РѕС‚Р±СЂРѕС€РµРЅ РЅР° СЌС‚Р°РїРµ homepage verification: entity_type=%s reason=%s",
                 document.url,
                 entity_type,
                 homepage_decision.reason,
@@ -797,7 +825,7 @@ class SerpIngestService:
         )
         if llm_classification and not self._is_llm_verdict_accepted(entity_type, llm_classification.site_verdict):
             LOGGER.debug(
-                "Документ %s отброшен по LLM-классификации: entity_type=%s verdict=%s confidence=%s",
+                "Р”РѕРєСѓРјРµРЅС‚ %s РѕС‚Р±СЂРѕС€РµРЅ РїРѕ LLM-РєР»Р°СЃСЃРёС„РёРєР°С†РёРё: entity_type=%s verdict=%s confidence=%s",
                 document.url,
                 entity_type,
                 llm_classification.site_verdict,
@@ -1058,7 +1086,7 @@ class SerpIngestService:
             "Content-Type": "application/json",
         }
         with httpx.Client(timeout=max(self.timeout, OPENAI_LLM_TIMEOUT_SECONDS)) as client:
-            response = client.post(OPENAI_CHAT_COMPLETIONS_URL, headers=headers, json=payload)
+            response = client.post(OPENAI_RESPONSES_URL, headers=headers, json=payload)
             response.raise_for_status()
         return self._parse_site_classification_openai_response(response.json())
 
@@ -1070,9 +1098,9 @@ class SerpIngestService:
     ) -> dict[str, object]:
         return {
             "model": self.settings.site_classification_llm_model,
-            "response_format": {
-                "type": "json_schema",
-                "json_schema": {
+            "text": {
+                "format": {
+                    "type": "json_schema",
                     "name": "SiteClassification",
                     "schema": {
                         "type": "object",
@@ -1096,23 +1124,28 @@ class SerpIngestService:
                         },
                         "required": ["site_verdict", "detected_city", "confidence", "reason"],
                     },
-                },
+                }
             },
-            "messages": [
+            "input": [
                 {
                     "role": "system",
-                    "content": (
-                        "Определи тип сайта и фактический город по ограниченному контексту. "
-                        "Сайт может быть официальным сайтом торгового центра, сайтом арендатора внутри ТЦ, "
-                        "официальным сайтом агентства недвижимости, сайтом застройщика, агрегатором, медиа-страницей "
-                        "или неопределённым случаем. Если уверенности нет, верни verdict=uncertain и detected_city=null. "
-                        "Опирайся только на переданный контекст. "
-                        f"{_llm_guidance_for_entity_type(expected_entity_type)}"
-                    ),
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": (
+                                "РћРїСЂРµРґРµР»Рё С‚РёРї СЃР°Р№С‚Р° Рё С„Р°РєС‚РёС‡РµСЃРєРёР№ РіРѕСЂРѕРґ РїРѕ РѕРіСЂР°РЅРёС‡РµРЅРЅРѕРјСѓ РєРѕРЅС‚РµРєСЃС‚Сѓ. "
+                                "РЎР°Р№С‚ РјРѕР¶РµС‚ Р±С‹С‚СЊ РѕС„РёС†РёР°Р»СЊРЅС‹Рј СЃР°Р№С‚РѕРј С‚РѕСЂРіРѕРІРѕРіРѕ С†РµРЅС‚СЂР°, СЃР°Р№С‚РѕРј Р°СЂРµРЅРґР°С‚РѕСЂР° РІРЅСѓС‚СЂРё РўР¦, "
+                                "РѕС„РёС†РёР°Р»СЊРЅС‹Рј СЃР°Р№С‚РѕРј Р°РіРµРЅС‚СЃС‚РІР° РЅРµРґРІРёР¶РёРјРѕСЃС‚Рё, СЃР°Р№С‚РѕРј Р·Р°СЃС‚СЂРѕР№С‰РёРєР°, Р°РіСЂРµРіР°С‚РѕСЂРѕРј, РјРµРґРёР°-СЃС‚СЂР°РЅРёС†РµР№ "
+                                "РёР»Рё РЅРµРѕРїСЂРµРґРµР»С‘РЅРЅС‹Рј СЃР»СѓС‡Р°РµРј. Р•СЃР»Рё СѓРІРµСЂРµРЅРЅРѕСЃС‚Рё РЅРµС‚, РІРµСЂРЅРё verdict=uncertain Рё detected_city=null. "
+                                "РћРїРёСЂР°Р№СЃСЏ С‚РѕР»СЊРєРѕ РЅР° РїРµСЂРµРґР°РЅРЅС‹Р№ РєРѕРЅС‚РµРєСЃС‚. "
+                                f"{_llm_guidance_for_entity_type(expected_entity_type)}"
+                            ),
+                        }
+                    ],
                 },
                 {
                     "role": "user",
-                    "content": json.dumps(request_context, ensure_ascii=False),
+                    "content": [{"type": "input_text", "text": json.dumps(request_context, ensure_ascii=False)}],
                 },
             ],
         }
@@ -1148,7 +1181,7 @@ class SerpIngestService:
         self,
         payload: dict[str, object],
     ) -> SiteClassificationDecision:
-        content = _strip_code_fences(str(payload["choices"][0]["message"]["content"]))
+        content = _strip_code_fences(_extract_responses_output_text(payload))
         return self._parse_site_classification_response(json.loads(content))
 
     def _parse_site_classification_response(
@@ -1266,3 +1299,4 @@ class SerpIngestService:
                 "attributes": attributes,
             },
         )
+

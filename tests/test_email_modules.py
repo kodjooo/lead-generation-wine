@@ -1,4 +1,4 @@
-"""Тесты генерации и отправки писем."""
+﻿"""РўРµСЃС‚С‹ РіРµРЅРµСЂР°С†РёРё Рё РѕС‚РїСЂР°РІРєРё РїРёСЃРµРј."""
 
 import json
 from datetime import datetime, timedelta, timezone
@@ -100,14 +100,14 @@ def test_email_generator_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
 
     generator = EmailGenerator()
     company = CompanyBrief(name="Test", domain="test.ru", entity_type="mall")
-    offer = OfferBrief(pains=["Долгий поиск лидов"], value_proposition="Автоматизируем холодный аутрич")
+    offer = OfferBrief(pains=["Р”РѕР»РіРёР№ РїРѕРёСЃРє Р»РёРґРѕРІ"], value_proposition="РђРІС‚РѕРјР°С‚РёР·РёСЂСѓРµРј С…РѕР»РѕРґРЅС‹Р№ Р°СѓС‚СЂРёС‡")
 
     generated = generator.generate(company, offer)
 
     assert generated.used_fallback is True
     assert generated.request_payload is None
-    assert "Марк" in generated.template.body
-    assert "торговый центр" in generated.template.body
+    assert "РњР°СЂРє" in generated.template.body
+    assert "С‚РѕСЂРіРѕРІС‹Р№ С†РµРЅС‚СЂ" in generated.template.body
     assert generated.request_payload is None
 
     reset_settings_cache()
@@ -119,26 +119,21 @@ def test_email_generator_calls_openai(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
 
     response_json = {
-        "choices": [
-            {
-                "message": {
-                    "content": json.dumps({"subject": "Тема", "body": "Текст"})
-                }
-            }
-        ]
+        "object": "response",
+        "output_text": json.dumps({"subject": "РўРµРјР°", "body": "РўРµРєСЃС‚"}),
     }
-    respx.post("https://api.openai.com/v1/chat/completions").mock(
+    respx.post("https://api.openai.com/v1/responses").mock(
         return_value=httpx.Response(200, json=response_json)
     )
 
     generator = EmailGenerator()
-    company = CompanyBrief(name="Alpha", domain="alpha.ru", entity_type="real_estate_agency", industry="Маркетинг")
-    offer = OfferBrief(pains=["Нужны лиды"], value_proposition="Запустим кампанию за 7 дней")
+    company = CompanyBrief(name="Alpha", domain="alpha.ru", entity_type="real_estate_agency", industry="РњР°СЂРєРµС‚РёРЅРі")
+    offer = OfferBrief(pains=["РќСѓР¶РЅС‹ Р»РёРґС‹"], value_proposition="Р—Р°РїСѓСЃС‚РёРј РєР°РјРїР°РЅРёСЋ Р·Р° 7 РґРЅРµР№")
 
     generated = generator.generate(company, offer)
 
-    assert generated.template.subject == "Тема"
-    assert generated.template.body == "Текст"
+    assert generated.template.subject == "РўРµРјР°"
+    assert generated.template.body == "РўРµРєСЃС‚"
     assert generated.request_payload is not None
     assert generated.used_fallback is False
 
@@ -265,6 +260,7 @@ def test_email_sender_queue_skips_invalid_email(monkeypatch: pytest.MonkeyPatch)
 def test_email_sender_deliver_skips_opt_out(monkeypatch: pytest.MonkeyPatch) -> None:
     session = DummySession(opt_out_emails=["skip@example.com"])
     reset_settings_cache()
+    monkeypatch.setenv("EMAIL_SENDING_ENABLED", "true")
 
     sender = EmailSender(session_factory=lambda: session, use_starttls=False)  # type: ignore[arg-type]
     sender.mx_router = MagicMock()
@@ -303,12 +299,14 @@ def test_email_sender_deliver_skips_opt_out(monkeypatch: pytest.MonkeyPatch) -> 
     assert params["status"] == "skipped"
     assert params["last_error"] == "opt_out"
 
+    monkeypatch.delenv("EMAIL_SENDING_ENABLED", raising=False)
     reset_settings_cache()
 
 
 def test_email_sender_deliver_skips_invalid_email(monkeypatch: pytest.MonkeyPatch) -> None:
     session = DummySession()
     reset_settings_cache()
+    monkeypatch.setenv("EMAIL_SENDING_ENABLED", "true")
 
     sender = EmailSender(session_factory=lambda: session, use_starttls=False)  # type: ignore[arg-type]
     sender.mx_router = MagicMock()
@@ -342,12 +340,14 @@ def test_email_sender_deliver_skips_invalid_email(monkeypatch: pytest.MonkeyPatc
     assert params["status"] == "skipped"
     assert params["last_error"] == "invalid_email"
 
+    monkeypatch.delenv("EMAIL_SENDING_ENABLED", raising=False)
     reset_settings_cache()
 
 
 def test_email_sender_deliver_success(monkeypatch: pytest.MonkeyPatch) -> None:
     session = DummySession()
     reset_settings_cache()
+    monkeypatch.setenv("EMAIL_SENDING_ENABLED", "true")
 
     sender = EmailSender(session_factory=lambda: session, use_starttls=False)  # type: ignore[arg-type]
     sender.mx_router = MagicMock()
@@ -389,6 +389,7 @@ def test_email_sender_deliver_success(monkeypatch: pytest.MonkeyPatch) -> None:
     assert isinstance(params["sent_at"], datetime)
     assert params["last_error"] is None
 
+    monkeypatch.delenv("EMAIL_SENDING_ENABLED", raising=False)
     reset_settings_cache()
 
 
@@ -409,8 +410,8 @@ def test_email_sender_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
         company_id="c1",
         contact_id="contact1",
         to_email="hello@example.com",
-        subject="Тема",
-        body="Текст",
+        subject="РўРµРјР°",
+        body="РўРµРєСЃС‚",
         session=session,
     )
 
@@ -426,3 +427,4 @@ def generator_template():
     offer = OfferBrief(value_proposition="Automation")
     generator = EmailGenerator()
     return generator._fallback_template(company, offer, None)
+

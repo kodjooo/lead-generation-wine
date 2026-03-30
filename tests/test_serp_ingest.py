@@ -411,18 +411,13 @@ def test_site_classification_llm_marks_tenant_inside_mall(monkeypatch: pytest.Mo
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
 
     response_json = {
-        "choices": [
-            {
-                "message": {
-                    "content": (
-                        '{"site_verdict":"mall_tenant_site","detected_city":"Краснодар",'
-                        '"confidence":0.92,"reason":"Сайт описывает детский центр внутри ТРЦ"}'
-                    )
-                }
-            }
-        ]
+        "object": "response",
+        "output_text": (
+            '{"site_verdict":"mall_tenant_site","detected_city":"Краснодар",'
+            '"confidence":0.92,"reason":"Сайт описывает детский центр внутри ТРЦ"}'
+        ),
     }
-    respx.post("https://api.openai.com/v1/chat/completions").mock(
+    respx.post("https://api.openai.com/v1/responses").mock(
         return_value=httpx.Response(200, json=response_json)
     )
 
@@ -473,18 +468,13 @@ def test_site_classification_llm_runs_for_uncertain_agency_even_with_city(monkey
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
 
     response_json = {
-        "choices": [
-            {
-                "message": {
-                    "content": (
-                        '{"site_verdict":"official_real_estate_agency_site","detected_city":"Краснодар",'
-                        '"confidence":0.89,"reason":"Сайт агентства недвижимости с каталогом объектов и услугами риэлторов"}'
-                    )
-                }
-            }
-        ]
+        "object": "response",
+        "output_text": (
+            '{"site_verdict":"official_real_estate_agency_site","detected_city":"Краснодар",'
+            '"confidence":0.89,"reason":"Сайт агентства недвижимости с каталогом объектов и услугами риэлторов"}'
+        ),
     }
-    route = respx.post("https://api.openai.com/v1/chat/completions").mock(
+    route = respx.post("https://api.openai.com/v1/responses").mock(
         return_value=httpx.Response(200, json=response_json)
     )
 
@@ -524,8 +514,8 @@ def test_site_classification_llm_runs_for_uncertain_agency_even_with_city(monkey
     assert classification.detected_city == "Краснодар"
     assert service._is_llm_verdict_accepted("real_estate_agency", classification.site_verdict) is True
     request_payload = json.loads(route.calls[0].request.content.decode("utf-8"))
-    assert "посреднических услуг" in request_payload["messages"][0]["content"]
-    user_payload = json.loads(request_payload["messages"][1]["content"])
+    assert request_payload["input"][0]["content"][0]["type"] == "input_text"
+    user_payload = json.loads(request_payload["input"][1]["content"][0]["text"])
     assert "homepage_screening" in user_payload
     assert "serp_screening" in user_payload
     get_settings.cache_clear()  # type: ignore[attr-defined]
@@ -588,28 +578,19 @@ def test_site_classification_llm_uses_gateway_provider(monkeypatch: pytest.Monke
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_GATEWAY_URL", "https://llm-gateway.example.com")
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_GATEWAY_API_KEY", "gateway-secret")
 
-    route = respx.post("https://llm-gateway.example.com/v1/openai/chat-completions").mock(
+    route = respx.post("https://llm-gateway.example.com/v1/openai/responses").mock(
         return_value=httpx.Response(
             200,
             json={
-                "id": "chatcmpl-gateway",
-                "object": "chat.completion",
+                "id": "resp-gateway",
+                "object": "response",
                 "detected_city": "Краснодар",
                 "model": "gpt-5-mini",
-                "choices": [
-                    {
-                        "index": 0,
-                        "message": {
-                            "role": "assistant",
-                            "content": (
-                                '{"site_verdict":"official_real_estate_agency_site",'
-                                '"detected_city":"\\u041a\\u0440\\u0430\\u0441\\u043d\\u043e\\u0434\\u0430\\u0440","confidence":0.94,'
-                                '"reason":"Gateway classified the site as an agency"}'
-                            ),
-                        },
-                        "finish_reason": "stop",
-                    }
-                ],
+                "output_text": (
+                    '{"site_verdict":"official_real_estate_agency_site",'
+                    '"detected_city":"\\u041a\\u0440\\u0430\\u0441\\u043d\\u043e\\u0434\\u0430\\u0440","confidence":0.94,'
+                    '"reason":"Gateway classified the site as an agency"}'
+                ),
             },
         )
     )
@@ -651,9 +632,9 @@ def test_site_classification_llm_uses_gateway_provider(monkeypatch: pytest.Monke
     assert classification.confidence == 0.94
     request_payload = json.loads(route.calls[0].request.content.decode("utf-8"))
     assert request_payload["model"] == "gpt-5-mini"
-    assert request_payload["response_format"]["json_schema"]["name"] == "SiteClassification"
-    assert "посреднических услуг" in request_payload["messages"][0]["content"]
-    user_payload = json.loads(request_payload["messages"][1]["content"])
+    assert request_payload["text"]["format"]["name"] == "SiteClassification"
+    assert request_payload["input"][0]["content"][0]["type"] == "input_text"
+    user_payload = json.loads(request_payload["input"][1]["content"][0]["text"])
     assert user_payload["domain"] == "verno.pro"
     assert route.calls[0].request.headers["Authorization"] == "Bearer gateway-secret"
     get_settings.cache_clear()  # type: ignore[attr-defined]
@@ -669,22 +650,17 @@ def test_site_classification_llm_retries_after_transient_http_error(monkeypatch:
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.6")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
 
-    route = respx.post("https://api.openai.com/v1/chat/completions").mock(
+    route = respx.post("https://api.openai.com/v1/responses").mock(
         side_effect=[
             httpx.Response(429, json={"error": {"message": "rate limit"}}),
             httpx.Response(
                 200,
                 json={
-                    "choices": [
-                        {
-                            "message": {
-                                "content": (
-                                    '{"site_verdict":"official_real_estate_agency_site","detected_city":"Краснодар",'
-                                    '"confidence":0.91,"reason":"Повторный вызов удался"}'
-                                )
-                            }
-                        }
-                    ]
+                    "object": "response",
+                    "output_text": (
+                        '{"site_verdict":"official_real_estate_agency_site","detected_city":"Краснодар",'
+                        '"confidence":0.91,"reason":"Повторный вызов удался"}'
+                    ),
                 },
             ),
         ]
@@ -738,11 +714,11 @@ def test_site_classification_llm_retries_invalid_payload_three_times_then_skips(
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.6")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
 
-    route = respx.post("https://api.openai.com/v1/chat/completions").mock(
+    route = respx.post("https://api.openai.com/v1/responses").mock(
         side_effect=[
-            httpx.Response(200, json={"choices": [{"message": {"content": "not-json"}}]}),
-            httpx.Response(200, json={"choices": [{"message": {"content": "{bad json"}}]}),
-            httpx.Response(200, json={"choices": [{"message": {"content": "```json\nstill-bad\n```"}}]}),
+            httpx.Response(200, json={"object": "response", "output_text": "not-json"}),
+            httpx.Response(200, json={"object": "response", "output_text": "{bad json"}),
+            httpx.Response(200, json={"object": "response", "output_text": "```json\nstill-bad\n```"}),
         ]
     )
 
