@@ -24,6 +24,10 @@ OPERATIONS_URL = "https://operation.api.cloud.yandex.net/operations"
 class YandexAPIError(RuntimeError):
     """Базовое исключение для ошибок Yandex Search API."""
 
+    def __init__(self, message: str, *, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+
 
 class NightWindowViolation(YandexAPIError):
     """Попытка создать deferred-запрос вне ночного окна."""
@@ -265,7 +269,8 @@ class YandexDeferredClient:
                 response.text,
             )
             raise YandexAPIError(
-                f"Ошибка создания deferred-запроса: {response.status_code}"
+                f"Ошибка создания deferred-запроса: {response.status_code}",
+                status_code=response.status_code,
             )
 
         return OperationResponse.from_dict(response.json())
@@ -285,7 +290,8 @@ class YandexDeferredClient:
                 response.text,
             )
             raise YandexAPIError(
-                f"Ошибка получения операции: {response.status_code}"
+                f"Ошибка получения операции: {response.status_code}",
+                status_code=response.status_code,
             )
 
         return OperationResponse.from_dict(response.json())

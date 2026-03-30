@@ -18,9 +18,8 @@ def main() -> None:
 
     try:
         while True:
-            enriched = orchestrator.enrich_missing_contacts()
-            sent = orchestrator.generate_and_send_emails()
-            LOGGER.info("Воркер цикл: enriched=%s, sent=%s", enriched, sent)
+            enriched, queued, sent = orchestrator.run_worker_cycle()
+            LOGGER.info("Воркер цикл: enriched=%s, queued=%s, sent=%s", enriched, queued, sent)
             time.sleep(orchestrator.config.poll_interval_seconds)
     except KeyboardInterrupt:
         LOGGER.info("Воркер остановлен пользователем.")

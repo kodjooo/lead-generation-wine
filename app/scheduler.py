@@ -1,4 +1,4 @@
-"""Планировщик deferred-запросов и polling операций."""
+"""Планировщик deferred-запросов."""
 
 import logging
 import time

@@ -26,10 +26,17 @@ from app.modules.utils.iam import (
     load_service_account_key_from_file,
     load_service_account_key_from_string,
 )
-from app.modules.yandex_deferred import DeferredQueryParams, OperationResponse, YandexDeferredClient
+from app.modules.yandex_deferred import (
+    DeferredQueryParams,
+    InvalidResponseError,
+    OperationResponse,
+    YandexDeferredClient,
+)
 from app.modules.sheet_sync import build_service as build_sheet_sync_service
 
 LOGGER = logging.getLogger("app.orchestrator")
+MAX_SERP_OPERATION_RETRIES = 3
+TERMINAL_SERP_OPERATION_STATUS_CODES = {400, 401, 403, 404}
 
 SELECT_PENDING_QUERIES_SQL = """
 SELECT id, query_text, region_code
@@ -66,7 +73,7 @@ WHERE id = :query_id;
 """
 
 SELECT_OPEN_OPERATIONS_SQL = """
-SELECT id, query_id, operation_id, status
+SELECT id, query_id, operation_id, status, retry_count
 FROM serp_operations
 WHERE status IN ('created', 'running')
 ORDER BY requested_at
@@ -246,15 +253,10 @@ class PipelineOrchestrator:
         processed = self._poll_operations()
         if processed:
             self.deduplicator.run()
-        enriched = self._enrich_missing_contacts()
-        queued, sent = self._generate_and_send_emails()
         LOGGER.info(
-            "Цикл завершён: scheduled=%s, processed=%s, enriched=%s, queued=%s, sent=%s",
+            "Цикл завершён: scheduled=%s, processed=%s",
             scheduled,
             processed,
-            enriched,
-            queued,
-            sent,
         )
 
     def run_forever(self) -> None:
@@ -282,6 +284,12 @@ class PipelineOrchestrator:
         """Генерация и отправка писем."""
         _, sent = self._generate_and_send_emails()
         return sent
+
+    def run_worker_cycle(self) -> tuple[int, int, int]:
+        """Отдельный цикл для worker: enrichment -> queue -> send."""
+        enriched = self._enrich_missing_contacts()
+        queued, sent = self._generate_and_send_emails()
+        return enriched, queued, sent
 
     def _maybe_sync_sheet(self) -> None:
         if not self._sheet_service:
@@ -382,7 +390,15 @@ class PipelineOrchestrator:
                         },
                     )
                 except Exception as exc:  # noqa: BLE001
+                    next_query_status = self._resolve_query_status_after_operation_error(
+                        retry_count=row["retry_count"],
+                        error=exc,
+                    )
                     LOGGER.exception("Ошибка обработки операции %s: %s", operation_id, exc)
+                    session.execute(
+                        text(UPDATE_QUERY_STATUS_SQL),
+                        {"query_id": row["query_id"], "status": next_query_status},
+                    )
                     session.execute(
                         text(UPDATE_OPERATION_STATUS_SQL),
                         {
@@ -395,6 +411,17 @@ class PipelineOrchestrator:
                         },
                     )
             return processed
+
+    @staticmethod
+    def _resolve_query_status_after_operation_error(*, retry_count: int, error: Exception) -> str:
+        next_retry_count = retry_count + 1
+        status_code = getattr(error, "status_code", None)
+
+        if status_code in TERMINAL_SERP_OPERATION_STATUS_CODES:
+            return "failed"
+        if next_retry_count >= MAX_SERP_OPERATION_RETRIES:
+            return "failed"
+        return "pending"
 
     def _should_poll_operations_now(self) -> bool:
         if self._results_processing_mode != "night_only":
@@ -409,11 +436,12 @@ class PipelineOrchestrator:
         query_id: str,
         operation: OperationResponse,
     ) -> None:
-        try:
-            raw_xml = operation.decode_raw_data()
-        except Exception as exc:  # noqa: BLE001
-            LOGGER.error("Не удалось декодировать ответ операции %s: %s", operation.id, exc)
-            return
+        if operation.error:
+            raise InvalidResponseError(
+                f"Операция {operation.id} завершилась с ошибкой: {json.dumps(operation.error, ensure_ascii=False)}"
+            )
+
+        raw_xml = operation.decode_raw_data()
 
         query_row = session.execute(
             text(SELECT_SERP_QUERY_DETAILS_SQL),
