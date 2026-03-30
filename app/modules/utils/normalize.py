@@ -16,6 +16,9 @@ def normalize_url(raw: str) -> str:
     if not value:
         return ""
 
+    if value.lower().startswith(("mailto:", "tel:", "javascript:", "data:", "#")):
+        return ""
+
     if not _SCHEME_RE.match(value):
         value = f"https://{value}"
 
@@ -31,8 +34,13 @@ def normalize_url(raw: str) -> str:
     if host.startswith("www."):
         host = host[4:]
 
-    if parsed.port and parsed.port not in (80, 443):
-        host = f"{host.split(':', 1)[0]}:{parsed.port}"
+    try:
+        port = parsed.port
+    except ValueError:
+        return ""
+
+    if port and port not in (80, 443):
+        host = f"{host.split(':', 1)[0]}:{port}"
     else:
         host = host.split(":", 1)[0]
 

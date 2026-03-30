@@ -39,6 +39,7 @@ BOT_CHALLENGE_MARKERS = (
     "robot check",
     "подтвердите, что вы не робот",
 )
+SKIPPED_HREF_PREFIXES = ("mailto:", "tel:", "javascript:", "data:", "#")
 
 
 @dataclass
@@ -485,6 +486,8 @@ class ContactEnricher:
         seen: Set[str] = set()
         for anchor in soup.find_all("a"):
             href = (anchor.get("href") or "").strip()
+            if not href or href.lower().startswith(SKIPPED_HREF_PREFIXES):
+                continue
             text_value = anchor.get_text(" ", strip=True).lower()
             haystack = f"{href.lower()} {text_value}"
             if not any(marker in haystack for marker in markers):

@@ -85,14 +85,23 @@ WHERE id = :operation_id;
 """
 
 SELECT_COMPANIES_WITHOUT_CONTACTS_SQL = """
-SELECT c.id, c.canonical_domain, c.industry
-FROM companies c
-LEFT JOIN contacts ct ON ct.company_id = c.id
-WHERE ct.id IS NULL
-  AND c.canonical_domain IS NOT NULL
-  AND c.status <> 'contacts_not_found'
-ORDER BY c.created_at
-LIMIT :limit;
+WITH locked_companies AS (
+    SELECT c.id, c.canonical_domain, c.industry, c.created_at
+    FROM companies c
+    WHERE c.canonical_domain IS NOT NULL
+      AND c.status <> 'contacts_not_found'
+      AND NOT EXISTS (
+          SELECT 1
+          FROM contacts ct
+          WHERE ct.company_id = c.id
+      )
+    ORDER BY c.created_at
+    LIMIT :limit
+    FOR UPDATE SKIP LOCKED
+)
+SELECT id, canonical_domain, industry
+FROM locked_companies
+ORDER BY created_at;
 """
 
 SELECT_CONTACTS_FOR_OUTREACH_SQL = """
