@@ -569,6 +569,74 @@ def test_site_classification_llm_skips_confident_agency(monkeypatch: pytest.Monk
 
 
 @respx.mock
+def test_site_classification_llm_uses_gateway_provider(monkeypatch: pytest.MonkeyPatch) -> None:
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_ENABLED", "true")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_PROVIDER", "gateway")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MODEL", "gpt-5-mini")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.6")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_GATEWAY_URL", "https://llm-gateway.example.com")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_GATEWAY_API_KEY", "gateway-secret")
+
+    route = respx.post("https://llm-gateway.example.com/v1/site-classification").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "site_verdict": "official_real_estate_agency_site",
+                "detected_city": "Краснодар",
+                "confidence": 0.94,
+                "reason": "Gateway classified the site as an agency",
+                "provider": "openai",
+                "model": "gpt-5-mini",
+            },
+        )
+    )
+
+    service = SerpIngestService(session_factory=lambda: None)  # type: ignore[arg-type]
+    document = parse_serp_xml(
+        """
+        <response>
+          <grouping>
+            <group>
+              <doc>
+                <url>https://verno.pro/</url>
+                <domain>verno.pro</domain>
+                <title>VERNO</title>
+                <passages>
+                  <passage>Недвижимость в Краснодаре</passage>
+                </passages>
+              </doc>
+            </group>
+          </grouping>
+        </response>
+        """.encode("utf-8")
+    )[0]
+
+    classification = service._maybe_classify_site_with_llm(
+        expected_city="Краснодар",
+        expected_entity_type="real_estate_agency",
+        document=document,
+        homepage_content="Каталог объектов. Купить квартиру в Краснодаре. Ипотека. Контакты.",
+        detection=CityDetection(detected_city="Краснодар", score=4.0, source="homepage"),
+        serp_decision=ScreeningDecision(True, 2.5, "serp_needs_homepage_verification", True),
+        homepage_decision=ScreeningDecision(True, 5.0, None),
+    )
+
+    assert route.called is True
+    assert classification is not None
+    assert classification.site_verdict == "official_real_estate_agency_site"
+    assert classification.detected_city == "Краснодар"
+    assert classification.confidence == 0.94
+    request_payload = json.loads(route.calls[0].request.content.decode("utf-8"))
+    assert request_payload["schema"] == "site_classification_v1"
+    assert request_payload["model"] == "gpt-5-mini"
+    assert request_payload["input"]["domain"] == "verno.pro"
+    assert route.calls[0].request.headers["Authorization"] == "Bearer gateway-secret"
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+
+
+@respx.mock
 def test_site_classification_llm_retries_after_transient_http_error(monkeypatch: pytest.MonkeyPatch) -> None:
     get_settings.cache_clear()  # type: ignore[attr-defined]
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_ENABLED", "true")

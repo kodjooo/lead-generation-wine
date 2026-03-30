@@ -152,8 +152,11 @@ class Settings:
     yandex_results_processing_mode: str
     openai_api_key: str
     site_classification_llm_enabled: bool
+    site_classification_llm_provider: str
     site_classification_llm_model: str
     site_classification_llm_min_confidence: float
+    site_classification_llm_gateway_url: str | None
+    site_classification_llm_gateway_api_key: str | None
     contact_enrich_playwright_enabled: bool
     contact_enrich_playwright_timeout_seconds: float
     email_generation_enabled: bool
@@ -291,6 +294,9 @@ def get_settings() -> Settings:
     results_processing_mode = (_env("YANDEX_RESULTS_PROCESSING_MODE", "anytime") or "anytime").lower()
     if results_processing_mode not in {"anytime", "night_only"}:
         results_processing_mode = "anytime"
+    site_classification_llm_provider = (_env("SITE_CLASSIFICATION_LLM_PROVIDER", "openai") or "openai").lower()
+    if site_classification_llm_provider not in {"openai", "gateway"}:
+        site_classification_llm_provider = "openai"
 
     return Settings(
         timezone=timezone_name,
@@ -302,8 +308,11 @@ def get_settings() -> Settings:
         yandex_results_processing_mode=results_processing_mode,
         openai_api_key=_env("OPENAI_API_KEY"),
         site_classification_llm_enabled=_env_bool("SITE_CLASSIFICATION_LLM_ENABLED", False),
+        site_classification_llm_provider=site_classification_llm_provider,
         site_classification_llm_model=_env("SITE_CLASSIFICATION_LLM_MODEL", "gpt-4.1-mini"),
         site_classification_llm_min_confidence=float(_env("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.6")),
+        site_classification_llm_gateway_url=_env("SITE_CLASSIFICATION_LLM_GATEWAY_URL") or None,
+        site_classification_llm_gateway_api_key=_env("SITE_CLASSIFICATION_LLM_GATEWAY_API_KEY") or None,
         contact_enrich_playwright_enabled=_env_bool("CONTACT_ENRICH_PLAYWRIGHT_ENABLED", False),
         contact_enrich_playwright_timeout_seconds=float(
             _env("CONTACT_ENRICH_PLAYWRIGHT_TIMEOUT_SECONDS", "20")

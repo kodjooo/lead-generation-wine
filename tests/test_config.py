@@ -19,8 +19,11 @@ def test_settings_loaded_from_env(monkeypatch) -> None:
     monkeypatch.setenv("YANDEX_CLOUD_FOLDER_ID", "folder-test")
     monkeypatch.setenv("YANDEX_RESULTS_PROCESSING_MODE", "night_only")
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_ENABLED", "true")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_PROVIDER", "gateway")
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MODEL", "gpt-4.1-mini")
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.75")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_GATEWAY_URL", "https://llm-gateway.example.com")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_GATEWAY_API_KEY", "gateway-secret")
     monkeypatch.setenv("CONTACT_ENRICH_PLAYWRIGHT_ENABLED", "true")
     monkeypatch.setenv("CONTACT_ENRICH_PLAYWRIGHT_TIMEOUT_SECONDS", "22")
     monkeypatch.setenv("EMAIL_GENERATION_ENABLED", "false")
@@ -74,8 +77,11 @@ def test_settings_loaded_from_env(monkeypatch) -> None:
     assert settings.yandex_iam_token == "test-token"
     assert settings.yandex_results_processing_mode == "night_only"
     assert settings.site_classification_llm_enabled is True
+    assert settings.site_classification_llm_provider == "gateway"
     assert settings.site_classification_llm_model == "gpt-4.1-mini"
     assert settings.site_classification_llm_min_confidence == 0.75
+    assert settings.site_classification_llm_gateway_url == "https://llm-gateway.example.com"
+    assert settings.site_classification_llm_gateway_api_key == "gateway-secret"
     assert settings.contact_enrich_playwright_enabled is True
     assert settings.contact_enrich_playwright_timeout_seconds == 22.0
     assert settings.email_generation_enabled is False

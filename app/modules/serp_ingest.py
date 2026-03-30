@@ -24,6 +24,7 @@ from app.modules.utils.normalize import clean_snippet, normalize_domain, normali
 
 LOGGER = logging.getLogger("app.serp_ingest")
 OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
+SITE_CLASSIFICATION_GATEWAY_PATH = "/v1/site-classification"
 OPENAI_LLM_TIMEOUT_SECONDS = 45.0
 OPENAI_LLM_MAX_ATTEMPTS = 3
 
@@ -895,7 +896,7 @@ class SerpIngestService:
     ) -> SiteClassificationDecision | None:
         if not self.settings.site_classification_llm_enabled:
             return None
-        if not self.settings.openai_api_key:
+        if not self._is_site_classification_llm_configured():
             return None
         if not self._should_use_llm_classification(
             expected_city=expected_city,
@@ -925,6 +926,11 @@ class SerpIngestService:
         if llm_decision.confidence < self.settings.site_classification_llm_min_confidence:
             return None
         return llm_decision
+
+    def _is_site_classification_llm_configured(self) -> bool:
+        if self.settings.site_classification_llm_provider == "gateway":
+            return bool(self.settings.site_classification_llm_gateway_url)
+        return bool(self.settings.openai_api_key)
 
     def _should_use_llm_classification(
         self,
@@ -962,6 +968,83 @@ class SerpIngestService:
         homepage_content: str,
         serp_decision: ScreeningDecision | None = None,
         homepage_decision: ScreeningDecision | None = None,
+    ) -> SiteClassificationDecision:
+        request_context = self._build_site_classification_context(
+            expected_city=expected_city,
+            expected_entity_type=expected_entity_type,
+            document=document,
+            homepage_content=homepage_content,
+            serp_decision=serp_decision,
+            homepage_decision=homepage_decision,
+        )
+        last_error: str | None = None
+        for attempt in range(1, OPENAI_LLM_MAX_ATTEMPTS + 1):
+            try:
+                if self.settings.site_classification_llm_provider == "gateway":
+                    return self._request_site_classification_via_gateway(request_context)
+                return self._request_site_classification_via_openai(
+                    request_context,
+                    expected_entity_type=expected_entity_type,
+                )
+            except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+                last_error = str(exc)
+                if isinstance(exc, httpx.HTTPStatusError):
+                    last_error = f"{exc} body={exc.response.text[:500]}"
+                if attempt < OPENAI_LLM_MAX_ATTEMPTS:
+                    time.sleep(float(attempt))
+                    continue
+
+        LOGGER.warning(
+            "LLM classification failed for domain=%s entity_type=%s after %s attempts: %s",
+            document.domain,
+            expected_entity_type,
+            OPENAI_LLM_MAX_ATTEMPTS,
+            last_error,
+        )
+        return SiteClassificationDecision(
+            site_verdict=None,
+            detected_city=None,
+            confidence=0.0,
+            reason=None,
+        )
+
+    def _build_site_classification_context(
+        self,
+        *,
+        expected_city: str | None,
+        expected_entity_type: str | None,
+        document: SerpDocument,
+        homepage_content: str,
+        serp_decision: ScreeningDecision | None,
+        homepage_decision: ScreeningDecision | None,
+    ) -> dict[str, object]:
+        return {
+            "expected_city": expected_city,
+            "expected_entity_type": expected_entity_type,
+            "domain": document.domain,
+            "serp": {
+                "title": document.title,
+                "snippet": document.snippet,
+                "url": document.url,
+                "position": document.position,
+            },
+            "serp_screening": {
+                "score": serp_decision.score if serp_decision else None,
+                "reason": serp_decision.reason if serp_decision else None,
+                "requires_verification": serp_decision.requires_verification if serp_decision else None,
+            },
+            "homepage_screening": {
+                "score": homepage_decision.score if homepage_decision else None,
+                "reason": homepage_decision.reason if homepage_decision else None,
+            },
+            "homepage_excerpt": homepage_content[:5000],
+        }
+
+    def _request_site_classification_via_openai(
+        self,
+        request_context: dict[str, object],
+        *,
+        expected_entity_type: str | None,
     ) -> SiteClassificationDecision:
         payload = {
             "model": self.settings.site_classification_llm_model,
@@ -1007,30 +1090,7 @@ class SerpIngestService:
                 },
                 {
                     "role": "user",
-                    "content": json.dumps(
-                        {
-                            "expected_city": expected_city,
-                            "expected_entity_type": expected_entity_type,
-                            "domain": document.domain,
-                            "serp": {
-                                "title": document.title,
-                                "snippet": document.snippet,
-                                "url": document.url,
-                                "position": document.position,
-                            },
-                            "serp_screening": {
-                                "score": serp_decision.score if serp_decision else None,
-                                "reason": serp_decision.reason if serp_decision else None,
-                                "requires_verification": serp_decision.requires_verification if serp_decision else None,
-                            },
-                            "homepage_screening": {
-                                "score": homepage_decision.score if homepage_decision else None,
-                                "reason": homepage_decision.reason if homepage_decision else None,
-                            },
-                            "homepage_excerpt": homepage_content[:5000],
-                        },
-                        ensure_ascii=False,
-                    ),
+                    "content": json.dumps(request_context, ensure_ascii=False),
                 },
             ],
         }
@@ -1038,45 +1098,52 @@ class SerpIngestService:
             "Authorization": f"Bearer {self.settings.openai_api_key}",
             "Content-Type": "application/json",
         }
-        last_error: str | None = None
-        for attempt in range(1, OPENAI_LLM_MAX_ATTEMPTS + 1):
-            try:
-                with httpx.Client(timeout=max(self.timeout, OPENAI_LLM_TIMEOUT_SECONDS)) as client:
-                    response = client.post(OPENAI_CHAT_COMPLETIONS_URL, headers=headers, json=payload)
-                    response.raise_for_status()
-                body = response.json()
-                content = _strip_code_fences(body["choices"][0]["message"]["content"])
-                parsed = json.loads(content)
-                verdict = parsed.get("site_verdict") or None
-                city = parsed.get("detected_city") or None
-                confidence = float(parsed.get("confidence") or 0.0)
-                reason = parsed.get("reason") or None
-                return SiteClassificationDecision(
-                    site_verdict=verdict,
-                    detected_city=city,
-                    confidence=confidence,
-                    reason=reason,
-                )
-            except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
-                last_error = str(exc)
-                if isinstance(exc, httpx.HTTPStatusError):
-                    last_error = f"{exc} body={exc.response.text[:500]}"
-                if attempt < OPENAI_LLM_MAX_ATTEMPTS:
-                    time.sleep(float(attempt))
-                    continue
+        with httpx.Client(timeout=max(self.timeout, OPENAI_LLM_TIMEOUT_SECONDS)) as client:
+            response = client.post(OPENAI_CHAT_COMPLETIONS_URL, headers=headers, json=payload)
+            response.raise_for_status()
+        body = response.json()
+        content = _strip_code_fences(body["choices"][0]["message"]["content"])
+        return self._parse_site_classification_response(json.loads(content))
 
-        LOGGER.warning(
-            "LLM classification failed for domain=%s entity_type=%s after %s attempts: %s",
-            document.domain,
-            expected_entity_type,
-            OPENAI_LLM_MAX_ATTEMPTS,
-            last_error,
-        )
+    def _request_site_classification_via_gateway(
+        self,
+        request_context: dict[str, object],
+    ) -> SiteClassificationDecision:
+        gateway_url = (self.settings.site_classification_llm_gateway_url or "").rstrip("/")
+        if not gateway_url:
+            raise ValueError("SITE_CLASSIFICATION_LLM_GATEWAY_URL is not configured")
+        headers = {"Content-Type": "application/json"}
+        if self.settings.site_classification_llm_gateway_api_key:
+            headers["Authorization"] = (
+                f"Bearer {self.settings.site_classification_llm_gateway_api_key}"
+            )
+        payload = {
+            "schema": "site_classification_v1",
+            "model": self.settings.site_classification_llm_model,
+            "input": request_context,
+        }
+        with httpx.Client(timeout=max(self.timeout, OPENAI_LLM_TIMEOUT_SECONDS)) as client:
+            response = client.post(
+                f"{gateway_url}{SITE_CLASSIFICATION_GATEWAY_PATH}",
+                headers=headers,
+                json=payload,
+            )
+            response.raise_for_status()
+        return self._parse_site_classification_response(response.json())
+
+    def _parse_site_classification_response(
+        self,
+        payload: dict[str, object],
+    ) -> SiteClassificationDecision:
+        verdict = payload.get("site_verdict") or None
+        city = payload.get("detected_city") or None
+        confidence = float(payload.get("confidence") or 0.0)
+        reason = payload.get("reason") or None
         return SiteClassificationDecision(
-            site_verdict=None,
-            detected_city=None,
-            confidence=0.0,
-            reason=None,
+            site_verdict=str(verdict) if verdict is not None else None,
+            detected_city=str(city) if city is not None else None,
+            confidence=confidence,
+            reason=str(reason) if reason is not None else None,
         )
 
     def _is_llm_verdict_accepted(self, entity_type: str | None, verdict: str | None) -> bool:
