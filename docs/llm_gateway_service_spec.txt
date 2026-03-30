@@ -29,7 +29,7 @@ GET /health
 
 6. Входной JSON для POST /v1/site-classification
 {
-  "schema": "site_classification_v1",
+  "schema_name": "site_classification_v1",
   "model": "gpt-5-mini",
   "input": {
     "expected_city": "Краснодар",

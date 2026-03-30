@@ -404,6 +404,9 @@ def test_detect_actual_city_prefers_homepage() -> None:
 def test_site_classification_llm_marks_tenant_inside_mall(monkeypatch: pytest.MonkeyPatch) -> None:
     get_settings.cache_clear()  # type: ignore[attr-defined]
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_ENABLED", "true")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_PROVIDER", "openai")
+    monkeypatch.delenv("SITE_CLASSIFICATION_LLM_GATEWAY_URL", raising=False)
+    monkeypatch.delenv("SITE_CLASSIFICATION_LLM_GATEWAY_API_KEY", raising=False)
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.6")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
 
@@ -463,6 +466,9 @@ def test_site_classification_llm_marks_tenant_inside_mall(monkeypatch: pytest.Mo
 def test_site_classification_llm_runs_for_uncertain_agency_even_with_city(monkeypatch: pytest.MonkeyPatch) -> None:
     get_settings.cache_clear()  # type: ignore[attr-defined]
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_ENABLED", "true")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_PROVIDER", "openai")
+    monkeypatch.delenv("SITE_CLASSIFICATION_LLM_GATEWAY_URL", raising=False)
+    monkeypatch.delenv("SITE_CLASSIFICATION_LLM_GATEWAY_API_KEY", raising=False)
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.6")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
 
@@ -528,6 +534,9 @@ def test_site_classification_llm_runs_for_uncertain_agency_even_with_city(monkey
 def test_site_classification_llm_skips_confident_agency(monkeypatch: pytest.MonkeyPatch) -> None:
     get_settings.cache_clear()  # type: ignore[attr-defined]
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_ENABLED", "true")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_PROVIDER", "openai")
+    monkeypatch.delenv("SITE_CLASSIFICATION_LLM_GATEWAY_URL", raising=False)
+    monkeypatch.delenv("SITE_CLASSIFICATION_LLM_GATEWAY_API_KEY", raising=False)
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.6")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
 
@@ -629,7 +638,7 @@ def test_site_classification_llm_uses_gateway_provider(monkeypatch: pytest.Monke
     assert classification.detected_city == "Краснодар"
     assert classification.confidence == 0.94
     request_payload = json.loads(route.calls[0].request.content.decode("utf-8"))
-    assert request_payload["schema"] == "site_classification_v1"
+    assert request_payload["schema_name"] == "site_classification_v1"
     assert request_payload["model"] == "gpt-5-mini"
     assert request_payload["input"]["domain"] == "verno.pro"
     assert route.calls[0].request.headers["Authorization"] == "Bearer gateway-secret"
@@ -640,6 +649,9 @@ def test_site_classification_llm_uses_gateway_provider(monkeypatch: pytest.Monke
 def test_site_classification_llm_retries_after_transient_http_error(monkeypatch: pytest.MonkeyPatch) -> None:
     get_settings.cache_clear()  # type: ignore[attr-defined]
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_ENABLED", "true")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_PROVIDER", "openai")
+    monkeypatch.delenv("SITE_CLASSIFICATION_LLM_GATEWAY_URL", raising=False)
+    monkeypatch.delenv("SITE_CLASSIFICATION_LLM_GATEWAY_API_KEY", raising=False)
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.6")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
 
@@ -706,6 +718,9 @@ def test_site_classification_llm_retries_invalid_payload_three_times_then_skips(
 ) -> None:
     get_settings.cache_clear()  # type: ignore[attr-defined]
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_ENABLED", "true")
+    monkeypatch.setenv("SITE_CLASSIFICATION_LLM_PROVIDER", "openai")
+    monkeypatch.delenv("SITE_CLASSIFICATION_LLM_GATEWAY_URL", raising=False)
+    monkeypatch.delenv("SITE_CLASSIFICATION_LLM_GATEWAY_API_KEY", raising=False)
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MIN_CONFIDENCE", "0.6")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
 

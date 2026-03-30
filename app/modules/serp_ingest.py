@@ -1118,7 +1118,7 @@ class SerpIngestService:
                 f"Bearer {self.settings.site_classification_llm_gateway_api_key}"
             )
         payload = {
-            "schema": "site_classification_v1",
+            "schema_name": "site_classification_v1",
             "model": self.settings.site_classification_llm_model,
             "input": request_context,
         }
