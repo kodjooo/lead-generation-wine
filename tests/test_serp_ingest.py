@@ -764,6 +764,7 @@ def test_serp_ingest_persists_results_and_companies() -> None:
     second_stmt_text = session.calls[1][0].text
     assert "INSERT INTO serp_results" in first_stmt_text
     assert "INSERT INTO companies" in second_stmt_text
+    assert "ON CONFLICT (canonical_domain) WHERE canonical_domain IS NOT NULL" in second_stmt_text
 
     params_result = session.calls[0][1]
     assert params_result["domain"] == "example.com"

@@ -635,7 +635,7 @@ VALUES (
     NOW(),
     NOW()
 )
-ON CONFLICT (dedupe_hash)
+ON CONFLICT (canonical_domain) WHERE canonical_domain IS NOT NULL
 DO UPDATE SET
     website_url = COALESCE(companies.website_url, EXCLUDED.website_url),
     industry = COALESCE(companies.industry, EXCLUDED.industry),
