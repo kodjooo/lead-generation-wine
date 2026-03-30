@@ -24,7 +24,7 @@ from app.modules.utils.normalize import clean_snippet, normalize_domain, normali
 
 LOGGER = logging.getLogger("app.serp_ingest")
 OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
-SITE_CLASSIFICATION_GATEWAY_PATH = "/v1/site-classification"
+SITE_CLASSIFICATION_GATEWAY_PATH = "/v1/openai/chat-completions"
 OPENAI_LLM_TIMEOUT_SECONDS = 45.0
 OPENAI_LLM_MAX_ATTEMPTS = 3
 
@@ -981,7 +981,10 @@ class SerpIngestService:
         for attempt in range(1, OPENAI_LLM_MAX_ATTEMPTS + 1):
             try:
                 if self.settings.site_classification_llm_provider == "gateway":
-                    return self._request_site_classification_via_gateway(request_context)
+                    return self._request_site_classification_via_gateway(
+                        request_context,
+                        expected_entity_type=expected_entity_type,
+                    )
                 return self._request_site_classification_via_openai(
                     request_context,
                     expected_entity_type=expected_entity_type,
@@ -1046,7 +1049,26 @@ class SerpIngestService:
         *,
         expected_entity_type: str | None,
     ) -> SiteClassificationDecision:
-        payload = {
+        payload = self._build_site_classification_openai_payload(
+            request_context=request_context,
+            expected_entity_type=expected_entity_type,
+        )
+        headers = {
+            "Authorization": f"Bearer {self.settings.openai_api_key}",
+            "Content-Type": "application/json",
+        }
+        with httpx.Client(timeout=max(self.timeout, OPENAI_LLM_TIMEOUT_SECONDS)) as client:
+            response = client.post(OPENAI_CHAT_COMPLETIONS_URL, headers=headers, json=payload)
+            response.raise_for_status()
+        return self._parse_site_classification_openai_response(response.json())
+
+    def _build_site_classification_openai_payload(
+        self,
+        *,
+        request_context: dict[str, object],
+        expected_entity_type: str | None,
+    ) -> dict[str, object]:
+        return {
             "model": self.settings.site_classification_llm_model,
             "response_format": {
                 "type": "json_schema",
@@ -1094,20 +1116,12 @@ class SerpIngestService:
                 },
             ],
         }
-        headers = {
-            "Authorization": f"Bearer {self.settings.openai_api_key}",
-            "Content-Type": "application/json",
-        }
-        with httpx.Client(timeout=max(self.timeout, OPENAI_LLM_TIMEOUT_SECONDS)) as client:
-            response = client.post(OPENAI_CHAT_COMPLETIONS_URL, headers=headers, json=payload)
-            response.raise_for_status()
-        body = response.json()
-        content = _strip_code_fences(body["choices"][0]["message"]["content"])
-        return self._parse_site_classification_response(json.loads(content))
 
     def _request_site_classification_via_gateway(
         self,
         request_context: dict[str, object],
+        *,
+        expected_entity_type: str | None,
     ) -> SiteClassificationDecision:
         gateway_url = (self.settings.site_classification_llm_gateway_url or "").rstrip("/")
         if not gateway_url:
@@ -1117,11 +1131,10 @@ class SerpIngestService:
             headers["Authorization"] = (
                 f"Bearer {self.settings.site_classification_llm_gateway_api_key}"
             )
-        payload = {
-            "schema_name": "site_classification_v1",
-            "model": self.settings.site_classification_llm_model,
-            "input": request_context,
-        }
+        payload = self._build_site_classification_openai_payload(
+            request_context=request_context,
+            expected_entity_type=expected_entity_type,
+        )
         with httpx.Client(timeout=max(self.timeout, OPENAI_LLM_TIMEOUT_SECONDS)) as client:
             response = client.post(
                 f"{gateway_url}{SITE_CLASSIFICATION_GATEWAY_PATH}",
@@ -1129,7 +1142,14 @@ class SerpIngestService:
                 json=payload,
             )
             response.raise_for_status()
-        return self._parse_site_classification_response(response.json())
+        return self._parse_site_classification_openai_response(response.json())
+
+    def _parse_site_classification_openai_response(
+        self,
+        payload: dict[str, object],
+    ) -> SiteClassificationDecision:
+        content = _strip_code_fences(str(payload["choices"][0]["message"]["content"]))
+        return self._parse_site_classification_response(json.loads(content))
 
     def _parse_site_classification_response(
         self,

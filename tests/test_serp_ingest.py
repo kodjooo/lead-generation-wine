@@ -1,4 +1,4 @@
-"""Тесты парсинга и сохранения результатов SERP."""
+﻿"""Тесты парсинга и сохранения результатов SERP."""
 
 from contextlib import contextmanager
 from typing import Any, Dict, List, Tuple
@@ -588,16 +588,28 @@ def test_site_classification_llm_uses_gateway_provider(monkeypatch: pytest.Monke
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_GATEWAY_URL", "https://llm-gateway.example.com")
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_GATEWAY_API_KEY", "gateway-secret")
 
-    route = respx.post("https://llm-gateway.example.com/v1/site-classification").mock(
+    route = respx.post("https://llm-gateway.example.com/v1/openai/chat-completions").mock(
         return_value=httpx.Response(
             200,
             json={
-                "site_verdict": "official_real_estate_agency_site",
+                "id": "chatcmpl-gateway",
+                "object": "chat.completion",
                 "detected_city": "Краснодар",
-                "confidence": 0.94,
-                "reason": "Gateway classified the site as an agency",
-                "provider": "openai",
                 "model": "gpt-5-mini",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {
+                            "role": "assistant",
+                            "content": (
+                                '{"site_verdict":"official_real_estate_agency_site",'
+                                '"detected_city":"\\u041a\\u0440\\u0430\\u0441\\u043d\\u043e\\u0434\\u0430\\u0440","confidence":0.94,'
+                                '"reason":"Gateway classified the site as an agency"}'
+                            ),
+                        },
+                        "finish_reason": "stop",
+                    }
+                ],
             },
         )
     )
@@ -638,9 +650,11 @@ def test_site_classification_llm_uses_gateway_provider(monkeypatch: pytest.Monke
     assert classification.detected_city == "Краснодар"
     assert classification.confidence == 0.94
     request_payload = json.loads(route.calls[0].request.content.decode("utf-8"))
-    assert request_payload["schema_name"] == "site_classification_v1"
     assert request_payload["model"] == "gpt-5-mini"
-    assert request_payload["input"]["domain"] == "verno.pro"
+    assert request_payload["response_format"]["json_schema"]["name"] == "SiteClassification"
+    assert "посреднических услуг" in request_payload["messages"][0]["content"]
+    user_payload = json.loads(request_payload["messages"][1]["content"])
+    assert user_payload["domain"] == "verno.pro"
     assert route.calls[0].request.headers["Authorization"] == "Bearer gateway-secret"
     get_settings.cache_clear()  # type: ignore[attr-defined]
 
@@ -892,3 +906,5 @@ def test_serp_ingest_skips_excluded_domains() -> None:
 
     assert inserted == []
     assert session.calls == []
+
+
