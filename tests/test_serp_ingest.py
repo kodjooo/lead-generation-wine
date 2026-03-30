@@ -633,6 +633,9 @@ def test_site_classification_llm_uses_gateway_provider(monkeypatch: pytest.Monke
     request_payload = json.loads(route.calls[0].request.content.decode("utf-8"))
     assert request_payload["model"] == "gpt-5-mini"
     assert request_payload["text"]["format"]["name"] == "SiteClassification"
+    assert request_payload["text"]["format"]["strict"] is True
+    assert request_payload["text"]["format"]["schema"]["additionalProperties"] is False
+    assert request_payload["text"]["format"]["schema"]["properties"]["site_verdict"]["type"] == "string"
     assert request_payload["input"][0]["content"][0]["type"] == "input_text"
     user_payload = json.loads(request_payload["input"][1]["content"][0]["text"])
     assert user_payload["domain"] == "verno.pro"

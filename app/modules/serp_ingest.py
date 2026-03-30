@@ -1117,11 +1117,13 @@ class SerpIngestService:
                 "format": {
                     "type": "json_schema",
                     "name": "SiteClassification",
+                    "strict": True,
                     "schema": {
                         "type": "object",
+                        "additionalProperties": False,
                         "properties": {
                             "site_verdict": {
-                                "type": ["string", "null"],
+                                "type": "string",
                                 "enum": [
                                     "official_mall_site",
                                     "mall_tenant_site",
@@ -1130,7 +1132,6 @@ class SerpIngestService:
                                     "aggregator_or_directory",
                                     "media_or_article",
                                     "uncertain",
-                                    None,
                                 ],
                             },
                             "detected_city": {"type": ["string", "null"]},

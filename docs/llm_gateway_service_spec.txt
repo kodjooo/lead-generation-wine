@@ -32,10 +32,23 @@
     "format": {
       "type": "json_schema",
       "name": "SiteClassification",
+      "strict": true,
       "schema": {
         "type": "object",
+        "additionalProperties": false,
         "properties": {
-          "site_verdict": {"type": ["string", "null"]},
+          "site_verdict": {
+            "type": "string",
+            "enum": [
+              "official_mall_site",
+              "mall_tenant_site",
+              "official_real_estate_agency_site",
+              "developer_site",
+              "aggregator_or_directory",
+              "media_or_article",
+              "uncertain"
+            ]
+          },
           "detected_city": {"type": ["string", "null"]},
           "confidence": {"type": "number"},
           "reason": {"type": ["string", "null"]}
