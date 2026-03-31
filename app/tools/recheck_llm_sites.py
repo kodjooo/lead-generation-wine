@@ -9,11 +9,13 @@ from dataclasses import dataclass
 from typing import Optional
 
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 
 from app.modules.serp_ingest import SerpDocument, SerpIngestService
 from app.modules.utils.db import get_session_factory, session_scope
 
 LOGGER = logging.getLogger("app.tools.recheck_llm_sites")
+DEFAULT_LOCK_TIMEOUT_MS = 1000
 
 CANDIDATE_SQL = """
 SELECT
@@ -163,34 +165,58 @@ def _build_patch(service: SerpIngestService, candidate: RecheckCandidate) -> tup
     return patch_json, patch["llm_status"], classification.detected_city
 
 
-def _apply_patch(candidate: RecheckCandidate, patch_json: str, actual_region: Optional[str]) -> None:
+def _is_retryable_lock_error(error: OperationalError) -> bool:
+    message = str(error).lower()
+    return "lock timeout" in message or "deadlock detected" in message
+
+
+def _apply_patch(
+    candidate: RecheckCandidate,
+    patch_json: str,
+    actual_region: Optional[str],
+    *,
+    lock_timeout_ms: int,
+) -> bool:
     session_factory = get_session_factory()
-    with session_scope(session_factory) as session:
-        session.execute(
-            text(UPDATE_COMPANY_SQL),
-            {
-                "company_id": candidate.company_id,
-                "actual_region": actual_region,
-                "patch": patch_json,
-            },
-        )
-        if candidate.serp_result_id:
+    try:
+        with session_scope(session_factory) as session:
+            session.execute(text(f"SET LOCAL lock_timeout = '{lock_timeout_ms}ms'"))
             session.execute(
-                text(UPDATE_SERP_RESULT_SQL),
+                text(UPDATE_COMPANY_SQL),
                 {
-                    "serp_result_id": candidate.serp_result_id,
+                    "company_id": candidate.company_id,
+                    "actual_region": actual_region,
                     "patch": patch_json,
                 },
             )
+            if candidate.serp_result_id:
+                session.execute(
+                    text(UPDATE_SERP_RESULT_SQL),
+                    {
+                        "serp_result_id": candidate.serp_result_id,
+                        "patch": patch_json,
+                    },
+                )
+    except OperationalError as exc:
+        if _is_retryable_lock_error(exc):
+            LOGGER.warning(
+                "Пропускаем LLM recheck для domain=%s из-за блокировки БД: %s",
+                candidate.canonical_domain,
+                exc,
+            )
+            return False
+        raise
+    return True
 
 
-def run(*, limit: int, retry_errors: bool, dry_run: bool) -> None:
+def run(*, limit: int, retry_errors: bool, dry_run: bool, lock_timeout_ms: int) -> None:
     service = SerpIngestService()
     candidates = _fetch_candidates(limit, retry_errors=retry_errors)
     LOGGER.info("Найдено кандидатов для LLM recheck: %s", len(candidates))
 
     success = 0
     errors = 0
+    skipped = 0
     for index, candidate in enumerate(candidates, start=1):
         patch_json, llm_status, actual_region = _build_patch(service, candidate)
         LOGGER.info(
@@ -202,17 +228,26 @@ def run(*, limit: int, retry_errors: bool, dry_run: bool) -> None:
             actual_region,
         )
         if not dry_run:
-            _apply_patch(candidate, patch_json, actual_region)
+            applied = _apply_patch(
+                candidate,
+                patch_json,
+                actual_region,
+                lock_timeout_ms=lock_timeout_ms,
+            )
+            if not applied:
+                skipped += 1
+                continue
         if llm_status == "success":
             success += 1
         else:
             errors += 1
 
     LOGGER.info(
-        "LLM recheck завершён: processed=%s success=%s error=%s dry_run=%s",
+        "LLM recheck завершён: processed=%s success=%s error=%s skipped=%s dry_run=%s",
         len(candidates),
         success,
         errors,
+        skipped,
         dry_run,
     )
 
@@ -230,13 +265,24 @@ def main() -> None:
         action="store_true",
         help="Не записывать результат в БД, только показать кандидатов и ответы.",
     )
+    parser.add_argument(
+        "--lock-timeout-ms",
+        type=int,
+        default=DEFAULT_LOCK_TIMEOUT_MS,
+        help="Сколько ждать блокировку UPDATE перед skip.",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s :: %(message)s",
     )
-    run(limit=args.limit, retry_errors=args.retry_errors, dry_run=args.dry_run)
+    run(
+        limit=args.limit,
+        retry_errors=args.retry_errors,
+        dry_run=args.dry_run,
+        lock_timeout_ms=args.lock_timeout_ms,
+    )
 
 
 if __name__ == "__main__":

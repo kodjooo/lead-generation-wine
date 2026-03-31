@@ -9,6 +9,7 @@ import json
 import httpx
 import pytest
 import respx
+from sqlalchemy.exc import OperationalError
 
 from app.config import get_settings
 from app.modules.serp_ingest import (
@@ -22,6 +23,7 @@ from app.modules.serp_ingest import (
     evaluate_serp_document,
     parse_serp_xml,
 )
+from app.tools.recheck_llm_sites import _is_retryable_lock_error
 
 
 SAMPLE_XML = """
@@ -906,5 +908,27 @@ def test_build_llm_tracking_payload_marks_error_for_empty_verdict() -> None:
     assert payload["llm_confidence"] == 0.0
     assert "llm_checked_at" in payload
     assert "llm_site_verdict" not in payload
+
+
+def test_recheck_llm_sites_detects_retryable_lock_errors() -> None:
+    lock_timeout_error = OperationalError(
+        "UPDATE companies",
+        {},
+        Exception("canceling statement due to lock timeout"),
+    )
+    deadlock_error = OperationalError(
+        "UPDATE companies",
+        {},
+        Exception("deadlock detected"),
+    )
+    other_error = OperationalError(
+        "UPDATE companies",
+        {},
+        Exception("syntax error at or near UPDATE"),
+    )
+
+    assert _is_retryable_lock_error(lock_timeout_error) is True
+    assert _is_retryable_lock_error(deadlock_error) is True
+    assert _is_retryable_lock_error(other_error) is False
 
 
