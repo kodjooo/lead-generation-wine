@@ -848,12 +848,14 @@ def test_serp_ingest_persists_results_and_companies() -> None:
     assert params_result["metadata"].startswith("{")
     assert '"yandex_operation_id": "op-123"' in params_result["metadata"]
     assert '"llm_site_verdict": "official_mall_site"' in params_result["metadata"]
+    assert '"llm_status": "success"' in params_result["metadata"]
 
     params_company = session.calls[1][1]
     assert params_company["domain"] == "example.com"
     assert params_company["website_url"].startswith("https://example.com")
     assert params_company["industry"] == "mall"
     assert params_company["actual_region"] == "Москва"
+    assert '"llm_status": "success"' in params_company["attributes"]
 
 
 def test_serp_ingest_skips_excluded_domains() -> None:
@@ -885,5 +887,24 @@ def test_serp_ingest_skips_excluded_domains() -> None:
 
     assert inserted == []
     assert session.calls == []
+
+
+def test_build_llm_tracking_payload_marks_error_for_empty_verdict() -> None:
+    service = SerpIngestService()
+
+    payload = service._build_llm_tracking_payload(
+        SiteClassificationDecision(
+            site_verdict=None,
+            detected_city=None,
+            confidence=0.0,
+            reason=None,
+        )
+    )
+
+    assert payload["llm_status"] == "error"
+    assert payload["llm_provider"] in {"openai", "gateway"}
+    assert payload["llm_confidence"] == 0.0
+    assert "llm_checked_at" in payload
+    assert "llm_site_verdict" not in payload
 
 

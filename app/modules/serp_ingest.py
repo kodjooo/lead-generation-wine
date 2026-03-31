@@ -9,6 +9,7 @@ import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from xml.etree import ElementTree as ET
 
@@ -1215,6 +1216,24 @@ class SerpIngestService:
             reason=str(reason) if reason is not None else None,
         )
 
+    def _build_llm_tracking_payload(
+        self,
+        llm_classification: SiteClassificationDecision,
+        *,
+        checked_at: datetime | None = None,
+    ) -> dict[str, object]:
+        checked_at_value = checked_at or datetime.now(timezone.utc)
+        payload: dict[str, object] = {
+            "llm_status": "success" if llm_classification.site_verdict else "error",
+            "llm_provider": self.settings.site_classification_llm_provider,
+            "llm_checked_at": checked_at_value.isoformat(),
+            "llm_confidence": llm_classification.confidence,
+            "llm_reason": llm_classification.reason,
+        }
+        if llm_classification.site_verdict is not None:
+            payload["llm_site_verdict"] = llm_classification.site_verdict
+        return payload
+
     def _is_llm_verdict_accepted(self, entity_type: str | None, verdict: str | None) -> bool:
         if not verdict:
             return True
@@ -1251,9 +1270,7 @@ class SerpIngestService:
             "screening_reason": screening_reason,
         }
         if llm_classification:
-            metadata_payload["llm_site_verdict"] = llm_classification.site_verdict
-            metadata_payload["llm_confidence"] = llm_classification.confidence
-            metadata_payload["llm_reason"] = llm_classification.reason
+            metadata_payload.update(self._build_llm_tracking_payload(llm_classification))
         if yandex_operation_id:
             metadata_payload["yandex_operation_id"] = yandex_operation_id
 
@@ -1296,9 +1313,7 @@ class SerpIngestService:
             "quality_score": relevance_score,
         }
         if llm_classification:
-            attributes_payload["llm_site_verdict"] = llm_classification.site_verdict
-            attributes_payload["llm_confidence"] = llm_classification.confidence
-            attributes_payload["llm_reason"] = llm_classification.reason
+            attributes_payload.update(self._build_llm_tracking_payload(llm_classification))
         attributes = json.dumps(
             attributes_payload,
             ensure_ascii=False,

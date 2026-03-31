@@ -338,3 +338,16 @@ done
 docker compose run --rm app python -m pytest
 ```
 4. **Проверка рассылки:** убедитесь, что `EMAIL_SENDING_ENABLED=true`, а текущее время попадает в окно 09:10–19:45 (МСК). Для ручного теста можно изменить `scheduled_for` конкретной записи; учитывайте, что новые письма автоматически разнесены на 4–8 минут от предыдущего.
+## Повторная LLM-классификация
+
+Если gateway/LLM был включён позже основного пайплайна, можно дозаполнить `llm_*` для уже найденных компаний без повторного Yandex-поиска и без повторного обхода сайтов:
+
+```bash
+docker compose run --rm app python -m app.tools.recheck_llm_sites --limit 500
+```
+
+Полезные флаги:
+- `--retry-errors` — повторно брать компании, уже помеченные `llm_status=error`
+- `--dry-run` — только показать кандидатов и ответы без записи в БД
+
+Команда берёт компании с заполненным `companies.attributes.homepage_excerpt`, у которых ещё нет успешного `llm_status=success`, отправляет их через тот же LLM/gateway-контур и дозаписывает `llm_status`, `llm_provider`, `llm_checked_at`, `llm_site_verdict`, `llm_confidence`, `llm_reason`. Если LLM вернул `detected_city`, обновляется и `actual_region`.
