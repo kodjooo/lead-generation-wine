@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import time
 from dataclasses import dataclass
 from typing import Optional
 
@@ -209,7 +210,14 @@ def _apply_patch(
     return True
 
 
-def run(*, limit: int, retry_errors: bool, dry_run: bool, lock_timeout_ms: int) -> None:
+def run(
+    *,
+    limit: int,
+    retry_errors: bool,
+    dry_run: bool,
+    lock_timeout_ms: int,
+    sleep_seconds: float,
+) -> None:
     service = SerpIngestService()
     candidates = _fetch_candidates(limit, retry_errors=retry_errors)
     LOGGER.info("Найдено кандидатов для LLM recheck: %s", len(candidates))
@@ -241,6 +249,8 @@ def run(*, limit: int, retry_errors: bool, dry_run: bool, lock_timeout_ms: int) 
             success += 1
         else:
             errors += 1
+        if sleep_seconds > 0 and index < len(candidates):
+            time.sleep(sleep_seconds)
 
     LOGGER.info(
         "LLM recheck завершён: processed=%s success=%s error=%s skipped=%s dry_run=%s",
@@ -271,6 +281,12 @@ def main() -> None:
         default=DEFAULT_LOCK_TIMEOUT_MS,
         help="Сколько ждать блокировку UPDATE перед skip.",
     )
+    parser.add_argument(
+        "--sleep-seconds",
+        type=float,
+        default=0.0,
+        help="Пауза между LLM-вызовами для обхода rate limit.",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -282,6 +298,7 @@ def main() -> None:
         retry_errors=args.retry_errors,
         dry_run=args.dry_run,
         lock_timeout_ms=args.lock_timeout_ms,
+        sleep_seconds=args.sleep_seconds,
     )
 
 
