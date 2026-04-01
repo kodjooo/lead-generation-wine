@@ -9,7 +9,12 @@ from unittest.mock import Mock
 from zoneinfo import ZoneInfo
 
 from app.modules.yandex_deferred import YandexAPIError
-from app.orchestrator import PipelineOrchestrator, SELECT_COMPANIES_WITHOUT_CONTACTS_SQL
+from app.orchestrator import (
+    PipelineOrchestrator,
+    SELECT_COMPANIES_WITHOUT_CONTACTS_SQL,
+    SELECT_CONTACTS_FOR_OUTREACH_SQL,
+)
+from app.tools.cleanup_llm_irrelevant_sites import IRRELEVANT_VERDICTS, _build_company_patch
 
 
 def test_should_poll_operations_now_allows_anytime(monkeypatch) -> None:
@@ -76,6 +81,24 @@ def test_run_worker_cycle_runs_enrichment_and_email_generation() -> None:
 def test_worker_enrichment_queue_prioritizes_only_new_companies() -> None:
     assert "c.status = 'new'" in SELECT_COMPANIES_WITHOUT_CONTACTS_SQL
     assert "c.status <> 'contacts_not_found'" not in SELECT_COMPANIES_WITHOUT_CONTACTS_SQL
+
+
+def test_outreach_queue_skips_llm_excluded_and_opt_out_companies() -> None:
+    assert "c.status <> 'excluded_by_llm'" in SELECT_CONTACTS_FOR_OUTREACH_SQL
+    assert "COALESCE(c.opt_out, FALSE) = FALSE" in SELECT_CONTACTS_FOR_OUTREACH_SQL
+
+
+def test_cleanup_llm_company_patch_marks_company_as_excluded() -> None:
+    candidate = SimpleNamespace(
+        llm_site_verdict="aggregator_or_directory",
+        llm_reason="Это каталог агентств, а не официальный сайт.",
+    )
+
+    payload = _build_company_patch(candidate)
+
+    assert '"excluded_by_llm": true' in payload
+    assert '"excluded_reason": "irrelevant_llm_site_verdict"' in payload
+    assert any(verdict in payload for verdict in IRRELEVANT_VERDICTS)
 
 
 class _FakeMappingsResult:

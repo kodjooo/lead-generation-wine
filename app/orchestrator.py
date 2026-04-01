@@ -118,6 +118,8 @@ WITH locked_contacts AS (
     JOIN companies c ON c.id = ct.company_id
     WHERE ct.contact_type = 'email'
       AND ct.is_primary = TRUE
+      AND c.status <> 'excluded_by_llm'
+      AND COALESCE(c.opt_out, FALSE) = FALSE
       AND c.attributes ->> 'homepage_excerpt' IS NOT NULL
       AND c.attributes ->> 'homepage_excerpt' <> ''
       AND NOT EXISTS (
