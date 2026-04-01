@@ -9,7 +9,7 @@ from unittest.mock import Mock
 from zoneinfo import ZoneInfo
 
 from app.modules.yandex_deferred import YandexAPIError
-from app.orchestrator import PipelineOrchestrator
+from app.orchestrator import PipelineOrchestrator, SELECT_COMPANIES_WITHOUT_CONTACTS_SQL
 
 
 def test_should_poll_operations_now_allows_anytime(monkeypatch) -> None:
@@ -71,6 +71,11 @@ def test_run_worker_cycle_runs_enrichment_and_email_generation() -> None:
     orchestrator._generate_and_send_emails = Mock(return_value=(2, 1))
 
     assert orchestrator.run_worker_cycle() == (3, 2, 1)
+
+
+def test_worker_enrichment_queue_prioritizes_only_new_companies() -> None:
+    assert "c.status = 'new'" in SELECT_COMPANIES_WITHOUT_CONTACTS_SQL
+    assert "c.status <> 'contacts_not_found'" not in SELECT_COMPANIES_WITHOUT_CONTACTS_SQL
 
 
 class _FakeMappingsResult:

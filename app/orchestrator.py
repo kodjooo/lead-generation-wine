@@ -96,7 +96,7 @@ WITH locked_companies AS (
     SELECT c.id, c.canonical_domain, c.industry, c.created_at
     FROM companies c
     WHERE c.canonical_domain IS NOT NULL
-      AND c.status <> 'contacts_not_found'
+      AND c.status = 'new'
       AND NOT EXISTS (
           SELECT 1
           FROM contacts ct
