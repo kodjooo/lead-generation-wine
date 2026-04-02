@@ -151,6 +151,11 @@ class Settings:
     yandex_enforce_night_window: bool
     yandex_results_processing_mode: str
     openai_api_key: str
+    email_generation_llm_provider: str
+    email_generation_llm_model: str
+    email_generation_llm_reasoning_effort: str
+    email_generation_llm_gateway_url: str | None
+    email_generation_llm_gateway_api_key: str | None
     site_classification_llm_enabled: bool
     site_classification_llm_provider: str
     site_classification_llm_model: str
@@ -297,6 +302,12 @@ def get_settings() -> Settings:
     site_classification_llm_provider = (_env("SITE_CLASSIFICATION_LLM_PROVIDER", "openai") or "openai").lower()
     if site_classification_llm_provider not in {"openai", "gateway"}:
         site_classification_llm_provider = "openai"
+    email_generation_llm_provider = (_env("EMAIL_GENERATION_LLM_PROVIDER", "openai") or "openai").lower()
+    if email_generation_llm_provider not in {"openai", "gateway"}:
+        email_generation_llm_provider = "openai"
+    email_generation_llm_reasoning_effort = (_env("EMAIL_GENERATION_LLM_REASONING_EFFORT", "low") or "low").lower()
+    if email_generation_llm_reasoning_effort not in {"low", "medium", "high"}:
+        email_generation_llm_reasoning_effort = "low"
 
     return Settings(
         timezone=timezone_name,
@@ -307,6 +318,11 @@ def get_settings() -> Settings:
         yandex_enforce_night_window=_env_bool("YANDEX_ENFORCE_NIGHT_WINDOW", True),
         yandex_results_processing_mode=results_processing_mode,
         openai_api_key=_env("OPENAI_API_KEY"),
+        email_generation_llm_provider=email_generation_llm_provider,
+        email_generation_llm_model=_env("EMAIL_GENERATION_LLM_MODEL", "gpt-5"),
+        email_generation_llm_reasoning_effort=email_generation_llm_reasoning_effort,
+        email_generation_llm_gateway_url=_env("EMAIL_GENERATION_LLM_GATEWAY_URL") or None,
+        email_generation_llm_gateway_api_key=_env("EMAIL_GENERATION_LLM_GATEWAY_API_KEY") or None,
         site_classification_llm_enabled=_env_bool("SITE_CLASSIFICATION_LLM_ENABLED", False),
         site_classification_llm_provider=site_classification_llm_provider,
         site_classification_llm_model=_env("SITE_CLASSIFICATION_LLM_MODEL", "gpt-4.1-mini"),

@@ -1,4 +1,4 @@
-﻿"""Р“РµРЅРµСЂР°С†РёСЏ РїРµСЂСЃРѕРЅР°Р»РёР·РёСЂРѕРІР°РЅРЅС‹С… РїРёСЃРµРј СЃ РїРѕРјРѕС‰СЊСЋ LLM."""
+"""Генерация персонализированных писем с помощью LLM."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from app.config import get_settings
 
 LOGGER = logging.getLogger("app.generate_email")
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
+EMAIL_GENERATION_GATEWAY_PATH = "/v1/openai/responses"
 
 
 def _extract_responses_output_text(payload: Dict[str, object]) -> Optional[str]:
@@ -45,7 +46,7 @@ def _extract_responses_output_text(payload: Dict[str, object]) -> Optional[str]:
 
 @dataclass
 class CompanyBrief:
-    """РњРёРЅРёРјР°Р»СЊРЅРѕРµ РѕРїРёСЃР°РЅРёРµ РєРѕРјРїР°РЅРёРё РґР»СЏ РїРёСЃСЊРјР°."""
+    """Минимальное описание компании для письма."""
 
     domain: str
     name: Optional[str] = None
@@ -56,7 +57,7 @@ class CompanyBrief:
 
 @dataclass
 class ContactBrief:
-    """РРЅС„РѕСЂРјР°С†РёСЏ Рѕ РєРѕРЅС‚Р°РєС‚РЅРѕРј Р»РёС†Рµ."""
+    """Информация о контактном лице."""
 
     name: Optional[str] = None
     role: Optional[str] = None
@@ -66,16 +67,16 @@ class ContactBrief:
 
 @dataclass
 class OfferBrief:
-    """РџСЂРµРґР»РѕР¶РµРЅРёРµ Рё РєР»СЋС‡РµРІС‹Рµ Р±РѕР»Рё РєР»РёРµРЅС‚Р°."""
+    """Предложение и ключевые боли клиента."""
 
     pains: List[str] = field(default_factory=list)
     value_proposition: str = ""
-    call_to_action: str = "Р”Р°РІР°Р№С‚Рµ РѕР±СЃСѓРґРёРј РІРѕР·РјРѕР¶РЅРѕСЃС‚Рё СЃРѕС‚СЂСѓРґРЅРёС‡РµСЃС‚РІР° РЅР° РєРѕСЂРѕС‚РєРѕРј СЃРѕР·РІРѕРЅРµ."  # noqa: E501
+    call_to_action: str = "Если тема актуальна, буду признателен за коммерческое предложение."  # noqa: E501
 
 
 @dataclass
 class EmailTemplate:
-    """Р“РѕС‚РѕРІРѕРµ РїРёСЃСЊРјРѕ."""
+    """Готовое письмо."""
 
     subject: str
     body: str
@@ -83,7 +84,7 @@ class EmailTemplate:
 
 @dataclass
 class GeneratedEmail:
-    """Р РµР·СѓР»СЊС‚Р°С‚ РіРµРЅРµСЂР°С†РёРё РїРёСЃСЊРјР° РІРјРµСЃС‚Рµ СЃ РёСЃС…РѕРґРЅС‹Рј Р·Р°РїСЂРѕСЃРѕРј."""
+    """Результат генерации письма вместе с исходным запросом."""
 
     template: EmailTemplate
     request_payload: Optional[Dict[str, object]] = None
@@ -91,21 +92,21 @@ class GeneratedEmail:
 
 
 class EmailGenerator:
-    """РРЅРєР°РїСЃСѓР»РёСЂСѓРµС‚ РѕР±СЂР°С‰РµРЅРёРµ Рє LLM Рё fallback-С€Р°Р±Р»РѕРЅ."""
+    """Инкапсулирует обращение к LLM и fallback-шаблон."""
 
     def __init__(
         self,
         *,
-        model: str = "gpt-4.1-mini",
+        model: str | None = None,
         language: str = "ru",
         temperature: float = 0.4,
         timeout: float = 15.0,
     ) -> None:
-        self.model = model
+        self.settings = get_settings()
+        self.model = model or self.settings.email_generation_llm_model
         self.language = language
         self.temperature = temperature
         self.timeout = timeout
-        self.settings = get_settings()
 
     def generate(
         self,
@@ -113,10 +114,10 @@ class EmailGenerator:
         offer: OfferBrief,
         contact: Optional[ContactBrief] = None,
     ) -> GeneratedEmail:
-        """Р’РѕР·РІСЂР°С‰Р°РµС‚ РіРѕС‚РѕРІС‹Р№ С€Р°Р±Р»РѕРЅ Рё РёСЃС…РѕРґРЅС‹Р№ Р·Р°РїСЂРѕСЃ Рє LLM."""
+        """Возвращает готовый шаблон и исходный запрос к LLM."""
         payload: Optional[Dict[str, object]] = None
-        if not self.settings.openai_api_key:
-            LOGGER.warning("OPENAI_API_KEY РЅРµ Р·Р°РґР°РЅ, РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ fallback-С€Р°Р±Р»РѕРЅ.")
+        if not self._llm_available():
+            LOGGER.warning("LLM для генерации писем не настроен, используется fallback-шаблон.")
             template = self._fallback_template(company, offer, contact)
             return GeneratedEmail(template=template, request_payload=None, used_fallback=True)
 
@@ -129,7 +130,7 @@ class EmailGenerator:
             template = self._fallback_template(company, offer, contact)
             return GeneratedEmail(template=template, request_payload=payload, used_fallback=True)
         except httpx.HTTPError as exc:  # noqa: PERF203
-            LOGGER.error("РћС€РёР±РєР° РѕР±СЂР°С‰РµРЅРёСЏ Рє OpenAI: %s", exc)
+            LOGGER.error("Ошибка обращения к OpenAI: %s", exc)
             template = self._fallback_template(company, offer, contact)
             return GeneratedEmail(template=template, request_payload=payload, used_fallback=True)
 
@@ -141,11 +142,20 @@ class EmailGenerator:
     ) -> Dict[str, object]:
         homepage_excerpt = " ".join(company.highlights) if company.highlights else None
         segment_name = self._segment_name(company.entity_type)
+        sender_profile = self._sender_profile(company.entity_type)
+        outreach_goal = self._outreach_goal(company.entity_type)
         user_payload = {
             "company": {
                 "entity_type": company.entity_type,
                 "segment_name": segment_name,
                 "homepage_excerpt": homepage_excerpt,
+            },
+            "sender": sender_profile,
+            "goal": outreach_goal,
+            "offer": {
+                "pains": offer.pains,
+                "value_proposition": offer.value_proposition,
+                "call_to_action": offer.call_to_action,
             },
             "guidelines": {
                 "language": self.language,
@@ -155,6 +165,7 @@ class EmailGenerator:
         return {
             "model": self.model,
             "temperature": self.temperature,
+            "reasoning": {"effort": self.settings.email_generation_llm_reasoning_effort},
             "text": {"format": {"type": "json_schema", **self._response_schema()}},
             "input": [
                 {
@@ -163,21 +174,28 @@ class EmailGenerator:
                         {
                             "type": "input_text",
                             "text": (
-                                "РўС‹ РњР°СЂРє РђР±РѕСЂС‡Рё, СЃРїРµС†РёР°Р»РёСЃС‚ РїРѕ AI-Р°РІС‚РѕРјР°С‚РёР·Р°С†РёРё. РўРІРѕСЏ Р·Р°РґР°С‡Р° вЂ” РїРёСЃР°С‚СЊ "
-                                "РїРµСЂСЃРѕРЅР°Р»РёР·РёСЂРѕРІР°РЅРЅС‹Рµ, С‡РµР»РѕРІРµС‡РµСЃРєРёРµ РїРёСЃСЊРјР° РЅР° СЂСѓСЃСЃРєРѕРј СЏР·С‹РєРµ РґР»СЏ РєРѕРјРїР°РЅРёР№, "
-                                "РєРѕС‚РѕСЂС‹Рј РјРѕР¶РЅРѕ РїРѕРјРѕС‡СЊ Р°РІС‚РѕРјР°С‚РёР·Р°С†РёРµР№ РїСЂРѕС†РµСЃСЃРѕРІ СЃ РїРѕРјРѕС‰СЊСЋ РЅРµР№СЂРѕСЃРµС‚РµР№, Python, make.com РёР»Рё n8n. "
-                                "РР·Р±РµРіР°Р№ СЂРµРєР»Р°РјРЅРѕРіРѕ С‚РѕРЅР° Рё РїСЂРµРІРѕСЃС…РѕРґРЅС‹С… СЃС‚РµРїРµРЅРµР№. Р”РµР»Р°Р№ Р°РєС†РµРЅС‚ РЅР° РїРѕР»СЊР·Рµ: СЌРєРѕРЅРѕРјРёСЏ РІСЂРµРјРµРЅРё, "
-                                "СЃРѕРєСЂР°С‰РµРЅРёРµ Р·Р°С‚СЂР°С‚, СѓСЃС‚СЂР°РЅРµРЅРёРµ СЂСѓС‚РёРЅС‹, РїРѕРІС‹С€РµРЅРёРµ СЌС„С„РµРєС‚РёРІРЅРѕСЃС‚Рё. Р’СЃРµРіРґР° РёСЃРїРѕР»СЊР·СѓР№ JSON-РѕС‚РІРµС‚ СЃ РїРѕР»СЏРјРё subject Рё body. "
-                                "Р•СЃС‚СЊ РґРІРµ РѕСЃРЅРѕРІРЅС‹Рµ Р°СѓРґРёС‚РѕСЂРёРё: С‚РѕСЂРіРѕРІС‹Рµ С†РµРЅС‚СЂС‹ Рё Р°РіРµРЅС‚СЃС‚РІР° РЅРµРґРІРёР¶РёРјРѕСЃС‚Рё. "
-                                "РџРѕРґР±РёСЂР°Р№ РЅР°Р±Р»СЋРґРµРЅРёСЏ Рё РїСЂРёРјРµСЂС‹ Р°РІС‚РѕРјР°С‚РёР·Р°С†РёРё РїРѕРґ РєРѕРЅРєСЂРµС‚РЅС‹Р№ С‚РёРї РєРѕРјРїР°РЅРёРё. "
-                                "РЎС‚СЂСѓРєС‚СѓСЂР° РїРёСЃСЊРјР° С„РёРєСЃРёСЂРѕРІР°РЅР°: С‚РµРјР° РїРµСЂРµРґР°С‘С‚ РёРґРµСЋ РѕРїС‚РёРјРёР·Р°С†РёРё РїСЂРѕС†РµСЃСЃРѕРІ РєРѕРјРїР°РЅРёРё (РЅР°РїСЂРёРјРµСЂ, 'РРґРµСЏ РїРѕ РѕРїС‚РёРјРёР·Р°С†РёРё РїСЂРѕС†РµСЃСЃРѕРІ РІР°С€РµР№ РєРѕРјРїР°РЅРёРё') Рё С‚РµР»Рѕ СЃРѕСЃС‚РѕРёС‚ РёР· Р±Р»РѕРєРѕРІ:\n"
-                                "1) РџСЂРёРІРµС‚СЃС‚РІРёРµ 'Р”РѕР±СЂС‹Р№ РґРµРЅСЊ!'.\n"
-                                "2) РљРѕСЂРѕС‚РєРѕРµ РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ РњР°СЂРєР° Рё РµРіРѕ РїРѕРґС…РѕРґР° (РЅРµР№СЂРѕСЃРµС‚Рё, Python).\n"
-                                "3) РЈРїРѕРјРёРЅР°РЅРёРµ, С‡РµРј Р·Р°РЅРёРјР°РµС‚СЃСЏ РєРѕРјРїР°РЅРёСЏ (РёСЃРїРѕР»СЊР·СѓР№ РїСЂРµРґРѕСЃС‚Р°РІР»РµРЅРЅС‹Р№ С‚РµРєСЃС‚, РЅРµ СѓРїРѕРјРёРЅР°Р№ РЅР°Р·РІР°РЅРёРµ). Р”РѕР±Р°РІСЊ РєРѕСЂРѕС‚РєРѕРµ РЅР°Р±Р»СЋРґРµРЅРёРµ (1 РїСЂРµРґР»РѕР¶РµРЅРёРµ) Рѕ С‡С‘Рј-С‚Рѕ, С‡С‚Рѕ РІС‹РґРµР»СЏРµС‚ РєРѕРјРїР°РЅРёСЋ: С‡С‚Рѕ С‚РµР±СЏ РІРїРµС‡Р°С‚Р»РёР»Рѕ, С‡С‚Рѕ РїРѕРєР°Р·Р°Р»РѕСЃСЊ РёРЅС‚РµСЂРµСЃРЅС‹Рј.\n"
-                                "4) РћРїРёСЃР°РЅРёРµ РєРѕРЅРєСЂРµС‚РЅРѕРіРѕ РїСЂРѕС†РµСЃСЃР°, РєРѕС‚РѕСЂС‹Р№ РјРѕР¶РЅРѕ СѓРїСЂРѕСЃС‚РёС‚СЊ СЃ РїРѕРјРѕС‰СЊСЋ AI, Рё РѕР¶РёРґР°РµРјРѕРіРѕ СЌС„С„РµРєС‚Р° (СЃРѕРєСЂР°С‚РёС‚СЊ Р·Р°РґРµСЂР¶РєРё, СѓРјРµРЅСЊС€РёС‚СЊ Р·Р°С‚СЂР°С‚С‹ Рё С‚.Рї.).\n"
-                                "5) РџСЂРёРіР»Р°С€РµРЅРёРµ РѕР±СЃСѓРґРёС‚СЊ РїСЂРёРјРµСЂС‹.\n"
-                                "6) Р—Р°РІРµСЂС€РµРЅРёРµ: 'РЎ СѓРІР°Р¶РµРЅРёРµРј,' + РёРјСЏ Рё РґРѕР»Р¶РЅРѕСЃС‚СЊ.\n"
-                                "РЎС‚СЂСѓРєС‚СѓСЂСѓ СЃРѕС…СЂР°РЅСЏР№, РЅРѕ С„РѕСЂРјСѓР»РёСЂРѕРІРєРё С‚РµРјС‹ Рё С‚РµР»Р° РІР°СЂСЊРёСЂСѓР№, С‡С‚РѕР±С‹ РїРёСЃСЊРјР° РЅРµ СЃРѕРІРїР°РґР°Р»Рё РґРѕСЃР»РѕРІРЅРѕ."
+                                "Ты пишешь короткие персонализированные cold email письма на русском языке от лица крупной "
+                                "розничной сети по продаже алкогольной продукции, которая ищет помещения для аренды в городах России. "
+                                "Всегда используй JSON-ответ с полями subject и body.\n"
+                                "Цель письма: начать деловой диалог и получить в ответ коммерческое предложение, условия аренды "
+                                "или подборку доступных объектов.\n"
+                                "Письмо должно быть естественным и очень коротким: 4-6 коротких предложений или 2-3 коротких абзаца "
+                                "без воды, без рекламного тона, без превосходных степеней, без давления, без капслока, без восклицательных "
+                                "знаков, без ссылок и без вложений. Нельзя использовать слова и паттерны, типичные для спама: "
+                                "'уникальное предложение', 'лучшие условия', 'срочно', 'гарантируем', 'эксклюзивно', массовые обращения.\n"
+                                "Письмо должно выглядеть как нормальный деловой запрос от арендатора. Можно кратко опереться на "
+                                "контекст сайта, но не выдумывай факты. Если данных мало, лучше писать нейтрально и аккуратно.\n"
+                                "Для торгового центра письмо должно сообщать, что мы рассматриваем ваш город для открытия магазина, "
+                                "хотели бы рассмотреть размещение в вашем ТЦ и будем признательны, если вы направите актуальные условия, "
+                                "площади или коммерческое предложение.\n"
+                                "Для агентства недвижимости письмо должно сообщать, что мы ищем помещение в вашем городе под размещение "
+                                "магазина и хотели бы узнать, какие объекты вы можете предложить; попроси подборку релевантных вариантов "
+                                "или коммерческое предложение.\n"
+                                "Важно делать каждое письмо максимально непохожим на остальные: меняй лексику, порядок фраз, ритм, "
+                                "формулировку темы и просьбы, но сохраняй деловой тон и смысл.\n"
+                                "Тема письма должна быть короткой и нейтральной, без кликбейта и без спамных конструкций.\n"
+                                "Подпись должна быть короткой, от первого лица множественного или единственного числа, без вымышленной "
+                                "биографии и без лишних деталей. Не упоминай AI, автоматизацию, маркетинг, нейросети или разработку."
                             ),
                         }
                     ],
@@ -195,7 +213,25 @@ class EmailGenerator:
         }
 
     def _request_openai(self, payload: Dict[str, object]) -> Dict[str, object]:
-        LOGGER.debug("Р—Р°РїСЂРѕСЃ Рє OpenAI: %s", payload)
+        LOGGER.debug("Запрос к LLM: %s", payload)
+
+        if self.settings.email_generation_llm_provider == "gateway":
+            gateway_url = (self.settings.email_generation_llm_gateway_url or "").rstrip("/")
+            if not gateway_url:
+                raise httpx.HTTPError("EMAIL_GENERATION_LLM_GATEWAY_URL is not configured")
+            headers = {"Content-Type": "application/json"}
+            if self.settings.email_generation_llm_gateway_api_key:
+                headers["Authorization"] = (
+                    f"Bearer {self.settings.email_generation_llm_gateway_api_key}"
+                )
+            with httpx.Client(timeout=self.timeout) as client:
+                response = client.post(
+                    f"{gateway_url}{EMAIL_GENERATION_GATEWAY_PATH}",
+                    headers=headers,
+                    json=payload,
+                )
+                response.raise_for_status()
+                return response.json()
 
         headers = {
             "Authorization": f"Bearer {self.settings.openai_api_key}",
@@ -206,6 +242,11 @@ class EmailGenerator:
             response.raise_for_status()
             return response.json()
 
+    def _llm_available(self) -> bool:
+        if self.settings.email_generation_llm_provider == "gateway":
+            return bool(self.settings.email_generation_llm_gateway_url)
+        return bool(self.settings.openai_api_key)
+
     def _parse_openai_response(self, response: Dict[str, object]) -> Optional[EmailTemplate]:
         try:
             content = _extract_responses_output_text(response)
@@ -214,7 +255,7 @@ class EmailGenerator:
             parsed = json.loads(content)
             return EmailTemplate(subject=parsed["subject"], body=parsed["body"])
         except (KeyError, TypeError, ValueError, json.JSONDecodeError):
-            LOGGER.error("РќРµ СѓРґР°Р»РѕСЃСЊ РёРЅС‚РµСЂРїСЂРµС‚РёСЂРѕРІР°С‚СЊ РѕС‚РІРµС‚ LLM: %s", response)
+            LOGGER.error("Не удалось интерпретировать ответ LLM: %s", response)
             return None
 
     def _fallback_template(
@@ -223,62 +264,100 @@ class EmailGenerator:
         offer: OfferBrief,
         contact: Optional[ContactBrief],
     ) -> EmailTemplate:
-        subject = "РРґРµСЏ РїРѕ РѕРїС‚РёРјРёР·Р°С†РёРё РїСЂРѕС†РµСЃСЃРѕРІ РІР°С€РµР№ РєРѕРјРїР°РЅРёРё"
+        subject = self._fallback_subject(company.entity_type)
         segment_name = self._segment_name(company.entity_type)
+        sender_profile = self._sender_profile(company.entity_type)
         if company.entity_type == "mall":
-            process_hint = (
-                "РЅР°РїСЂРёРјРµСЂ, Р°РІС‚РѕРјР°С‚РёР·РёСЂРѕРІР°С‚СЊ РѕР±СЂР°Р±РѕС‚РєСѓ Р·Р°СЏРІРѕРє РЅР° Р°СЂРµРЅРґСѓ, РІС…РѕРґСЏС‰РёС… РѕР±СЂР°С‰РµРЅРёР№ Р°СЂРµРЅРґР°С‚РѕСЂРѕРІ "
-                "Рё РїРѕРґРіРѕС‚РѕРІРєСѓ СЃРІРѕРґРѕРє РїРѕ Р·Р°РїРѕР»РЅСЏРµРјРѕСЃС‚Рё, С‡С‚РѕР±С‹ РєРѕРјР°РЅРґР° РјРµРЅСЊС€Рµ С‚СЂР°С‚РёР»Р° РІСЂРµРјРµРЅРё РЅР° СЂСѓС‚РёРЅСѓ"
+            observation = self._observation_line(company)
+            request_line = (
+                "Рассматриваем ваш город для открытия магазина и хотели бы понять, "
+                "есть ли у вас подходящие площади для размещения."
             )
-            observation = "РЎР°Р№С‚ РїСЂРѕРёР·РІРѕРґРёС‚ РІРїРµС‡Р°С‚Р»РµРЅРёРµ РїР»РѕС‰Р°РґРєРё СЃ Р±РѕР»СЊС€РёРј С‡РёСЃР»РѕРј РїР°СЂР°Р»Р»РµР»СЊРЅС‹С… РєРѕРјРјСѓРЅРёРєР°С†РёР№ Рё РїСЂРѕС†РµСЃСЃРѕРІ."
+            cta_line = (
+                "Если тема актуальна, буду признателен, если направите условия аренды, "
+                "доступные площади или коммерческое предложение."
+            )
         elif company.entity_type == "real_estate_agency":
-            process_hint = (
-                "РЅР°РїСЂРёРјРµСЂ, Р°РІС‚РѕРјР°С‚РёР·РёСЂРѕРІР°С‚СЊ РїРµСЂРІРёС‡РЅС‹Р№ СЂР°Р·Р±РѕСЂ РІС…РѕРґСЏС‰РёС… Р·Р°СЏРІРѕРє, РјР°СЂС€СЂСѓС‚РёР·Р°С†РёСЋ Р»РёРґРѕРІ "
-                "Рё РїРѕРґРіРѕС‚РѕРІРєСѓ РєР»РёРµРЅС‚СЃРєРёС… РїРѕРґР±РѕСЂРѕРє, С‡С‚РѕР±С‹ РєРѕРјР°РЅРґР° РјРµРЅСЊС€Рµ С‚СЂР°С‚РёР»Р° РІСЂРµРјРµРЅРё РЅР° СЂСѓС‚РёРЅСѓ"
+            observation = self._observation_line(company)
+            request_line = (
+                "Ищем помещение под магазин в вашем городе и хотели бы узнать, "
+                "какие объекты вы могли бы предложить под такой запрос."
             )
-            observation = "РџРѕ СЃР°Р№С‚Сѓ РІРёРґРЅРѕ, С‡С‚Рѕ Сѓ РІР°СЃ РјРЅРѕРіРѕ РѕРґРЅРѕС‚РёРїРЅС‹С… РєРѕРјРјСѓРЅРёРєР°С†РёР№, РіРґРµ Р°РІС‚РѕРјР°С‚РёР·Р°С†РёСЏ РјРѕР¶РµС‚ Р±С‹СЃС‚СЂРѕ РѕРєСѓРїРёС‚СЊСЃСЏ."
+            cta_line = (
+                "Если у вас есть релевантные варианты, буду признателен за подборку "
+                "или коммерческое предложение."
+            )
         else:
-            industry_fragment = company.industry or "РІР°С€РµР№ СЃС„РµСЂРµ"
-            if offer.value_proposition:
-                automation_example = offer.value_proposition.lower()
-                process_hint = (
-                    f"РЅР°РїСЂРёРјРµСЂ, {automation_example}, С‡С‚РѕР±С‹ РєРѕРјР°РЅРґР° РјРµРЅСЊС€Рµ С‚СЂР°С‚РёР»Р° РІСЂРµРјРµРЅРё РЅР° СЂСѓС‚РёРЅСѓ"
-                )
-            elif offer.pains:
-                pain_focus = offer.pains[0].lower()
-                process_hint = (
-                    f"РЅР°РїСЂРёРјРµСЂ, Р°РІС‚РѕРјР°С‚РёР·РёСЂРѕРІР°С‚СЊ С‡Р°СЃС‚Рё РїСЂРѕС†РµСЃСЃР° РІРѕРєСЂСѓРі {pain_focus}, "
-                    "С‡С‚РѕР±С‹ РєРѕРјР°РЅРґР° РјРµРЅСЊС€Рµ С‚СЂР°С‚РёР»Р° РІСЂРµРјРµРЅРё РЅР° СЂСѓС‚РёРЅСѓ"
-                )
-            else:
-                process_hint = (
-                    "РЅР°РїСЂРёРјРµСЂ, Р°РІС‚РѕРјР°С‚РёР·РёСЂРѕРІР°С‚СЊ РѕР±СЂР°Р±РѕС‚РєСѓ Р·Р°СЏРІРѕРє РёР»Рё РїРѕРґРіРѕС‚РѕРІРєСѓ РѕС‚С‡С‘С‚РѕРІ, "
-                    "С‡С‚РѕР±С‹ РєРѕРјР°РЅРґР° РјРµРЅСЊС€Рµ С‚СЂР°С‚РёР»Р° РІСЂРµРјРµРЅРё РЅР° СЂСѓС‚РёРЅСѓ"
-                )
-            observation = f"РџРѕ СЃР°Р№С‚Сѓ РІРёРґРЅРѕ, С‡С‚Рѕ РІС‹ СЃРёСЃС‚РµРјРЅРѕ СЂР°Р·РІРёРІР°РµС‚Рµ РїСЂРѕС†РµСЃСЃС‹ РІ СЃС„РµСЂРµ {industry_fragment}."
+            observation = self._observation_line(company)
+            request_line = (
+                "Сейчас рассматриваем ваш город и ищем помещение для аренды под магазин."
+            )
+            cta_line = offer.call_to_action
         body_lines = [
-            "Р”РѕР±СЂС‹Р№ РґРµРЅСЊ!",
-            "РњРµРЅСЏ Р·РѕРІСѓС‚ РњР°СЂРє, СЏ Р·Р°РЅРёРјР°СЋСЃСЊ Р°РІС‚РѕРјР°С‚РёР·Р°С†РёРµР№ Р±РёР·РЅРµСЃ-РїСЂРѕС†РµСЃСЃРѕРІ СЃ РїРѕРјРѕС‰СЊСЋ РЅРµР№СЂРѕСЃРµС‚РµР№ Рё Python.",
-            f"РџРѕСЃРјРѕС‚СЂРµР» РІР°С€ СЃР°Р№С‚ вЂ” РїРѕ РѕРїРёСЃР°РЅРёСЋ РІРёРґРЅРѕ, С‡С‚Рѕ РІС‹ СЂР°Р±РѕС‚Р°РµС‚Рµ РєР°Рє {segment_name}.",
+            "Добрый день!",
+            sender_profile,
+            f"Посмотрел ваш сайт — вижу, что вы работаете как {segment_name}.",
             observation,
-            f"РњРЅРµ РєР°Р¶РµС‚СЃСЏ, Р·РґРµСЃСЊ РјРѕР¶РЅРѕ СѓРїСЂРѕСЃС‚РёС‚СЊ РїСЂРѕС†РµСЃСЃС‹, {process_hint}.",
-            "",
-            "Р•СЃР»Рё РёРЅС‚РµСЂРµСЃРЅРѕ, РјРѕРіСѓ РїРѕРєР°Р·Р°С‚СЊ РЅР° РєРѕРЅРєСЂРµС‚РЅС‹С… РїСЂРёРјРµСЂР°С…, РєР°Рє СЌС‚Рѕ СЂР°Р±РѕС‚Р°РµС‚.",
-            "",
-            "РЎ СѓРІР°Р¶РµРЅРёРµРј,",
-            "РњР°СЂРє РђР±РѕСЂС‡Рё",
-            "AI-Automation Specialist",
+            request_line,
+            cta_line,
+            "С уважением,",
+            "Марк",
         ]
         body = "\n".join(body_lines)
         return EmailTemplate(subject=subject, body=body)
 
+    def _fallback_subject(self, entity_type: Optional[str]) -> str:
+        if entity_type == "mall":
+            return "Запрос по аренде помещения в вашем ТЦ"
+        if entity_type == "real_estate_agency":
+            return "Запрос по помещениям в вашем городе"
+        return "Запрос по аренде помещения"
+
+    def _sender_profile(self, entity_type: Optional[str]) -> str:
+        if entity_type == "mall":
+            return (
+                "Представляю крупную розничную сеть по продаже алкогольной продукции, "
+                "сейчас смотрим локации в вашем городе."
+            )
+        if entity_type == "real_estate_agency":
+            return (
+                "Представляю крупную розничную сеть по продаже алкогольной продукции, "
+                "подбираем помещения в вашем городе под открытие магазина."
+            )
+        return (
+            "Представляю крупную розничную сеть по продаже алкогольной продукции, "
+            "сейчас рассматриваем помещения в вашем городе."
+        )
+
+    def _observation_line(self, company: CompanyBrief) -> str:
+        excerpt = " ".join(company.highlights).strip() if company.highlights else ""
+        if excerpt:
+            return "Посмотрел ваш сайт и краткое описание объектов."
+        return "Посмотрел ваш сайт и решил написать напрямую."
+
+    def _outreach_goal(self, entity_type: Optional[str]) -> Dict[str, str]:
+        if entity_type == "mall":
+            return {
+                "target": "mall",
+                "ask": "Запросить условия аренды, доступные площади и коммерческое предложение по размещению в ТЦ.",
+            }
+        if entity_type == "real_estate_agency":
+            return {
+                "target": "agency",
+                "ask": "Запросить релевантные объекты под аренду магазина и коммерческое предложение.",
+            }
+        return {
+            "target": "generic",
+            "ask": "Запросить подходящие помещения для аренды в городе.",
+        }
+
     @staticmethod
     def _segment_name(entity_type: Optional[str]) -> str:
         if entity_type == "mall":
-            return "С‚РѕСЂРіРѕРІС‹Р№ С†РµРЅС‚СЂ"
+            return "торговый центр"
         if entity_type == "real_estate_agency":
-            return "Р°РіРµРЅС‚СЃС‚РІРѕ РЅРµРґРІРёР¶РёРјРѕСЃС‚Рё"
-        return "РєРѕРјРїР°РЅРёСЏ"
+            return "агентство недвижимости"
+        return "компания"
 
     def _response_schema(self) -> Dict[str, object]:
         return {

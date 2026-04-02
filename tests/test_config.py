@@ -18,6 +18,11 @@ def test_settings_loaded_from_env(monkeypatch) -> None:
     monkeypatch.setenv("YANDEX_CLOUD_IAM_TOKEN", "test-token")
     monkeypatch.setenv("YANDEX_CLOUD_FOLDER_ID", "folder-test")
     monkeypatch.setenv("YANDEX_RESULTS_PROCESSING_MODE", "night_only")
+    monkeypatch.setenv("EMAIL_GENERATION_LLM_PROVIDER", "gateway")
+    monkeypatch.setenv("EMAIL_GENERATION_LLM_MODEL", "gpt-5")
+    monkeypatch.setenv("EMAIL_GENERATION_LLM_REASONING_EFFORT", "low")
+    monkeypatch.setenv("EMAIL_GENERATION_LLM_GATEWAY_URL", "https://llm-gateway.example.com")
+    monkeypatch.setenv("EMAIL_GENERATION_LLM_GATEWAY_API_KEY", "email-gateway-secret")
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_ENABLED", "true")
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_PROVIDER", "gateway")
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_MODEL", "gpt-4.1-mini")
@@ -76,6 +81,11 @@ def test_settings_loaded_from_env(monkeypatch) -> None:
     assert settings.yandex_folder_id == "folder-test"
     assert settings.yandex_iam_token == "test-token"
     assert settings.yandex_results_processing_mode == "night_only"
+    assert settings.email_generation_llm_provider == "gateway"
+    assert settings.email_generation_llm_model == "gpt-5"
+    assert settings.email_generation_llm_reasoning_effort == "low"
+    assert settings.email_generation_llm_gateway_url == "https://llm-gateway.example.com"
+    assert settings.email_generation_llm_gateway_api_key == "email-gateway-secret"
     assert settings.site_classification_llm_enabled is True
     assert settings.site_classification_llm_provider == "gateway"
     assert settings.site_classification_llm_model == "gpt-4.1-mini"

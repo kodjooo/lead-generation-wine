@@ -1,4 +1,4 @@
-﻿"""РўРµСЃС‚С‹ РіРµРЅРµСЂР°С†РёРё Рё РѕС‚РїСЂР°РІРєРё РїРёСЃРµРј."""
+"""Тесты генерации и отправки писем."""
 
 import json
 from datetime import datetime, timedelta, timezone
@@ -96,18 +96,24 @@ def reset_settings_cache() -> None:
 
 def test_email_generator_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     reset_settings_cache()
+    monkeypatch.setenv("EMAIL_GENERATION_LLM_PROVIDER", "openai")
     monkeypatch.setenv("OPENAI_API_KEY", "")
+    monkeypatch.delenv("EMAIL_GENERATION_LLM_GATEWAY_URL", raising=False)
+    monkeypatch.delenv("EMAIL_GENERATION_LLM_GATEWAY_API_KEY", raising=False)
 
     generator = EmailGenerator()
     company = CompanyBrief(name="Test", domain="test.ru", entity_type="mall")
-    offer = OfferBrief(pains=["Р”РѕР»РіРёР№ РїРѕРёСЃРє Р»РёРґРѕРІ"], value_proposition="РђРІС‚РѕРјР°С‚РёР·РёСЂСѓРµРј С…РѕР»РѕРґРЅС‹Р№ Р°СѓС‚СЂРёС‡")
+    offer = OfferBrief(
+        pains=["Нужна локация с подходящим трафиком"],
+        value_proposition="Рассматриваем размещение магазина в торговом центре",
+    )
 
     generated = generator.generate(company, offer)
 
     assert generated.used_fallback is True
     assert generated.request_payload is None
-    assert "РњР°СЂРє" in generated.template.body
-    assert "С‚РѕСЂРіРѕРІС‹Р№ С†РµРЅС‚СЂ" in generated.template.body
+    assert "розничную сеть по продаже алкогольной продукции" in generated.template.body
+    assert "подходящие площади для размещения" in generated.template.body
     assert generated.request_payload is None
 
     reset_settings_cache()
@@ -116,26 +122,72 @@ def test_email_generator_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
 @respx.mock
 def test_email_generator_calls_openai(monkeypatch: pytest.MonkeyPatch) -> None:
     reset_settings_cache()
+    monkeypatch.setenv("EMAIL_GENERATION_LLM_PROVIDER", "openai")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.delenv("EMAIL_GENERATION_LLM_GATEWAY_URL", raising=False)
+    monkeypatch.delenv("EMAIL_GENERATION_LLM_GATEWAY_API_KEY", raising=False)
 
     response_json = {
         "object": "response",
-        "output_text": json.dumps({"subject": "РўРµРјР°", "body": "РўРµРєСЃС‚"}),
+        "output_text": json.dumps({"subject": "Тема", "body": "Текст"}),
     }
     respx.post("https://api.openai.com/v1/responses").mock(
         return_value=httpx.Response(200, json=response_json)
     )
 
     generator = EmailGenerator()
-    company = CompanyBrief(name="Alpha", domain="alpha.ru", entity_type="real_estate_agency", industry="РњР°СЂРєРµС‚РёРЅРі")
-    offer = OfferBrief(pains=["РќСѓР¶РЅС‹ Р»РёРґС‹"], value_proposition="Р—Р°РїСѓСЃС‚РёРј РєР°РјРїР°РЅРёСЋ Р·Р° 7 РґРЅРµР№")
+    company = CompanyBrief(name="Alpha", domain="alpha.ru", entity_type="real_estate_agency", industry="Маркетинг")
+    offer = OfferBrief(pains=["Нужны лиды"], value_proposition="Запустим кампанию за 7 дней")
 
     generated = generator.generate(company, offer)
 
-    assert generated.template.subject == "РўРµРјР°"
-    assert generated.template.body == "РўРµРєСЃС‚"
+    assert generated.template.subject == "Тема"
+    assert generated.template.body == "Текст"
     assert generated.request_payload is not None
     assert generated.used_fallback is False
+    payload_text = generated.request_payload["input"][0]["content"][0]["text"]
+    assert "крупной розничной сети по продаже алкогольной продукции" in payload_text
+    assert "получить в ответ коммерческое предложение" in payload_text
+
+    reset_settings_cache()
+
+
+@respx.mock
+def test_email_generator_uses_gateway_provider(monkeypatch: pytest.MonkeyPatch) -> None:
+    reset_settings_cache()
+    monkeypatch.setenv("EMAIL_GENERATION_LLM_PROVIDER", "gateway")
+    monkeypatch.setenv("EMAIL_GENERATION_LLM_MODEL", "gpt-5")
+    monkeypatch.setenv("EMAIL_GENERATION_LLM_REASONING_EFFORT", "low")
+    monkeypatch.setenv("EMAIL_GENERATION_LLM_GATEWAY_URL", "https://llm-gateway.example.com")
+    monkeypatch.setenv("EMAIL_GENERATION_LLM_GATEWAY_API_KEY", "gateway-secret")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    route = respx.post("https://llm-gateway.example.com/v1/openai/responses").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "object": "response",
+                "output_text": json.dumps({"subject": "Тема gateway", "body": "Текст gateway"}),
+            },
+        )
+    )
+
+    generator = EmailGenerator()
+    company = CompanyBrief(name="Mall", domain="mall.ru", entity_type="mall", industry="mall")
+    offer = OfferBrief(value_proposition="Рассматриваем размещение магазина в торговом центре")
+
+    generated = generator.generate(company, offer)
+
+    assert generated.used_fallback is False
+    assert generated.template.subject == "Тема gateway"
+    assert generated.template.body == "Текст gateway"
+    assert route.called is True
+    assert route.calls[0].request.headers["Authorization"] == "Bearer gateway-secret"
+
+    request_payload = json.loads(route.calls[0].request.content.decode("utf-8"))
+    assert request_payload["model"] == "gpt-5"
+    assert request_payload["reasoning"]["effort"] == "low"
+    assert request_payload["input"][0]["content"][0]["type"] == "input_text"
 
     reset_settings_cache()
 
@@ -410,8 +462,8 @@ def test_email_sender_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
         company_id="c1",
         contact_id="contact1",
         to_email="hello@example.com",
-        subject="РўРµРјР°",
-        body="РўРµРєСЃС‚",
+        subject="Тема",
+        body="Текст",
         session=session,
     )
 
