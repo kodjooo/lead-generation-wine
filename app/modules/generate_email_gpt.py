@@ -374,6 +374,7 @@ class EmailGenerator:
                     "body": {"type": "string"},
                 },
                 "required": ["subject", "body"],
+                "additionalProperties": False,
             },
         }
 
