@@ -188,6 +188,7 @@ def test_email_generator_uses_gateway_provider(monkeypatch: pytest.MonkeyPatch) 
     assert request_payload["model"] == "gpt-5"
     assert request_payload["reasoning"]["effort"] == "low"
     assert request_payload["input"][0]["content"][0]["type"] == "input_text"
+    assert "temperature" not in request_payload
 
     reset_settings_cache()
 

@@ -162,9 +162,8 @@ class EmailGenerator:
                 "avoid_marketing": True,
             },
         }
-        return {
+        payload = {
             "model": self.model,
-            "temperature": self.temperature,
             "reasoning": {"effort": self.settings.email_generation_llm_reasoning_effort},
             "text": {"format": {"type": "json_schema", **self._response_schema()}},
             "input": [
@@ -211,6 +210,12 @@ class EmailGenerator:
                 },
             ],
         }
+        if not self._should_omit_temperature():
+            payload["temperature"] = self.temperature
+        return payload
+
+    def _should_omit_temperature(self) -> bool:
+        return self.model.startswith("gpt-5")
 
     def _request_openai(self, payload: Dict[str, object]) -> Dict[str, object]:
         LOGGER.debug("Запрос к LLM: %s", payload)
