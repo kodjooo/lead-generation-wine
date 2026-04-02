@@ -225,6 +225,26 @@ def test_email_sender_queue_persists_email(monkeypatch: pytest.MonkeyPatch) -> N
     reset_settings_cache()
 
 
+def test_email_generator_renders_user_prompt_template(monkeypatch: pytest.MonkeyPatch) -> None:
+    reset_settings_cache()
+    monkeypatch.setenv("EMAIL_GENERATION_LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.delenv("EMAIL_GENERATION_LLM_GATEWAY_URL", raising=False)
+    monkeypatch.delenv("EMAIL_GENERATION_LLM_GATEWAY_API_KEY", raising=False)
+
+    generator = EmailGenerator()
+    company = CompanyBrief(name="Alpha", domain="alpha.ru", entity_type="real_estate_agency")
+    offer = OfferBrief(value_proposition="test")
+
+    payload = generator._build_payload(company, offer, None)
+    user_prompt_text = payload["input"][1]["content"][0]["text"]
+
+    assert "Контекст:" in user_prompt_text
+    assert "\"entity_type\": \"real_estate_agency\"" in user_prompt_text
+
+    reset_settings_cache()
+
+
 def test_email_sender_queue_spacing(monkeypatch: pytest.MonkeyPatch) -> None:
     session = DummySession()
     reset_settings_cache()

@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
+from pathlib import Path
+from string import Template
 from typing import Dict, List, Optional
 
 import httpx
@@ -14,6 +16,9 @@ from app.config import get_settings
 LOGGER = logging.getLogger("app.generate_email")
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 EMAIL_GENERATION_GATEWAY_PATH = "/v1/openai/responses"
+PROMPTS_DIR = Path(__file__).resolve().parents[1] / "prompts"
+EMAIL_SYSTEM_PROMPT_PATH = PROMPTS_DIR / "email_generation_system_prompt.txt"
+EMAIL_USER_PROMPT_PATH = PROMPTS_DIR / "email_generation_user_prompt.txt"
 
 
 def _extract_responses_output_text(payload: Dict[str, object]) -> Optional[str]:
@@ -71,7 +76,9 @@ class OfferBrief:
 
     pains: List[str] = field(default_factory=list)
     value_proposition: str = ""
-    call_to_action: str = "Если тема актуальна, буду признателен за коммерческое предложение."  # noqa: E501
+    call_to_action: str = (
+        "Если тема актуальна, буду признателен за коммерческое предложение."
+    )
 
 
 @dataclass
@@ -107,6 +114,8 @@ class EmailGenerator:
         self.language = language
         self.temperature = temperature
         self.timeout = timeout
+        self._system_prompt_template = self._load_prompt_template(EMAIL_SYSTEM_PROMPT_PATH)
+        self._user_prompt_template = self._load_prompt_template(EMAIL_USER_PROMPT_PATH)
 
     def generate(
         self,
@@ -117,7 +126,9 @@ class EmailGenerator:
         """Возвращает готовый шаблон и исходный запрос к LLM."""
         payload: Optional[Dict[str, object]] = None
         if not self._llm_available():
-            LOGGER.warning("LLM для генерации писем не настроен, используется fallback-шаблон.")
+            LOGGER.warning(
+                "LLM для генерации писем не настроен, используется fallback-шаблон."
+            )
             template = self._fallback_template(company, offer, contact)
             return GeneratedEmail(template=template, request_payload=None, used_fallback=True)
 
@@ -172,30 +183,7 @@ class EmailGenerator:
                     "content": [
                         {
                             "type": "input_text",
-                            "text": (
-                                "Ты пишешь короткие персонализированные cold email письма на русском языке от лица крупной "
-                                "розничной сети по продаже алкогольной продукции, которая ищет помещения для аренды в городах России. "
-                                "Всегда используй JSON-ответ с полями subject и body.\n"
-                                "Цель письма: начать деловой диалог и получить в ответ коммерческое предложение, условия аренды "
-                                "или подборку доступных объектов.\n"
-                                "Письмо должно быть естественным и очень коротким: 4-6 коротких предложений или 2-3 коротких абзаца "
-                                "без воды, без рекламного тона, без превосходных степеней, без давления, без капслока, без восклицательных "
-                                "знаков, без ссылок и без вложений. Нельзя использовать слова и паттерны, типичные для спама: "
-                                "'уникальное предложение', 'лучшие условия', 'срочно', 'гарантируем', 'эксклюзивно', массовые обращения.\n"
-                                "Письмо должно выглядеть как нормальный деловой запрос от арендатора. Можно кратко опереться на "
-                                "контекст сайта, но не выдумывай факты. Если данных мало, лучше писать нейтрально и аккуратно.\n"
-                                "Для торгового центра письмо должно сообщать, что мы рассматриваем ваш город для открытия магазина, "
-                                "хотели бы рассмотреть размещение в вашем ТЦ и будем признательны, если вы направите актуальные условия, "
-                                "площади или коммерческое предложение.\n"
-                                "Для агентства недвижимости письмо должно сообщать, что мы ищем помещение в вашем городе под размещение "
-                                "магазина и хотели бы узнать, какие объекты вы можете предложить; попроси подборку релевантных вариантов "
-                                "или коммерческое предложение.\n"
-                                "Важно делать каждое письмо максимально непохожим на остальные: меняй лексику, порядок фраз, ритм, "
-                                "формулировку темы и просьбы, но сохраняй деловой тон и смысл.\n"
-                                "Тема письма должна быть короткой и нейтральной, без кликбейта и без спамных конструкций.\n"
-                                "Подпись должна быть короткой, от первого лица множественного или единственного числа, без вымышленной "
-                                "биографии и без лишних деталей. Не упоминай AI, автоматизацию, маркетинг, нейросети или разработку."
-                            ),
+                            "text": self._system_prompt_text(),
                         }
                     ],
                 },
@@ -204,7 +192,7 @@ class EmailGenerator:
                     "content": [
                         {
                             "type": "input_text",
-                            "text": json.dumps(user_payload, ensure_ascii=False),
+                            "text": self._user_prompt_text(user_payload),
                         }
                     ],
                 },
@@ -262,6 +250,19 @@ class EmailGenerator:
         except (KeyError, TypeError, ValueError, json.JSONDecodeError):
             LOGGER.error("Не удалось интерпретировать ответ LLM: %s", response)
             return None
+
+    @staticmethod
+    def _load_prompt_template(path: Path) -> Template:
+        return Template(path.read_text(encoding="utf-8").strip())
+
+    def _system_prompt_text(self) -> str:
+        return self._system_prompt_template.substitute(language=self.language)
+
+    def _user_prompt_text(self, user_payload: Dict[str, object]) -> str:
+        return self._user_prompt_template.substitute(
+            language=self.language,
+            user_payload_json=json.dumps(user_payload, ensure_ascii=False, indent=2),
+        )
 
     def _fallback_template(
         self,
@@ -344,12 +345,17 @@ class EmailGenerator:
         if entity_type == "mall":
             return {
                 "target": "mall",
-                "ask": "Запросить условия аренды, доступные площади и коммерческое предложение по размещению в ТЦ.",
+                "ask": (
+                    "Запросить условия аренды, доступные площади и коммерческое предложение "
+                    "по размещению в ТЦ."
+                ),
             }
         if entity_type == "real_estate_agency":
             return {
                 "target": "agency",
-                "ask": "Запросить релевантные объекты под аренду магазина и коммерческое предложение.",
+                "ask": (
+                    "Запросить релевантные объекты под аренду магазина и коммерческое предложение."
+                ),
             }
         return {
             "target": "generic",
@@ -377,4 +383,3 @@ class EmailGenerator:
                 "additionalProperties": False,
             },
         }
-
