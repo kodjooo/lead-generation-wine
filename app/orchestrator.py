@@ -120,18 +120,11 @@ WITH locked_contacts AS (
       AND ct.is_primary = TRUE
       AND c.status <> 'excluded_by_llm'
       AND COALESCE(c.opt_out, FALSE) = FALSE
-      AND c.attributes ->> 'homepage_excerpt' IS NOT NULL
-      AND c.attributes ->> 'homepage_excerpt' <> ''
       AND NOT EXISTS (
           SELECT 1
           FROM outreach_messages om
           WHERE om.contact_id = ct.id
             AND om.status IN ('sent', 'scheduled')
-      )
-      AND NOT EXISTS (
-          SELECT 1
-          FROM opt_out_registry o
-          WHERE LOWER(o.contact_value) = LOWER(ct.value)
       )
     ORDER BY ct.first_seen_at
     LIMIT :limit

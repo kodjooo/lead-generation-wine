@@ -12,7 +12,6 @@ import respx
 from app.config import get_settings
 from app.modules.generate_email_gpt import CompanyBrief, EmailGenerator, OfferBrief
 from app.modules.send_email import EmailSender
-from app.modules.mx_router import MXResult
 
 
 class DummySelectResult:
@@ -349,8 +348,6 @@ def test_email_sender_deliver_skips_opt_out(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setenv("EMAIL_SENDING_ENABLED", "true")
 
     sender = EmailSender(session_factory=lambda: session, use_starttls=False)  # type: ignore[arg-type]
-    sender.mx_router = MagicMock()
-    sender.mx_router.classify.return_value = MXResult("OTHER", [], False)
     monkeypatch.setattr(sender, "_send_via_channel", MagicMock(side_effect=AssertionError("deliver must not be called")))
     monkeypatch.setattr(
         sender,
@@ -395,8 +392,6 @@ def test_email_sender_deliver_skips_invalid_email(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setenv("EMAIL_SENDING_ENABLED", "true")
 
     sender = EmailSender(session_factory=lambda: session, use_starttls=False)  # type: ignore[arg-type]
-    sender.mx_router = MagicMock()
-    sender.mx_router.classify.return_value = MXResult("OTHER", [], False)
     monkeypatch.setattr(sender, "_send_via_channel", MagicMock())
     monkeypatch.setattr(sender, "_is_within_send_window", lambda *_: True)
 
@@ -434,10 +429,13 @@ def test_email_sender_deliver_success(monkeypatch: pytest.MonkeyPatch) -> None:
     session = DummySession()
     reset_settings_cache()
     monkeypatch.setenv("EMAIL_SENDING_ENABLED", "true")
+    monkeypatch.setenv("YANDEX_SMTP_HOST", "smtp.yandex.test")
+    monkeypatch.setenv("YANDEX_SMTP_PORT", "465")
+    monkeypatch.setenv("YANDEX_USER", "sender@yandex.ru")
+    monkeypatch.setenv("YANDEX_PASS", "yandex-pass")
+    monkeypatch.setenv("YANDEX_FROM", "Yandex Sender <sender@yandex.ru>")
 
     sender = EmailSender(session_factory=lambda: session, use_starttls=False)  # type: ignore[arg-type]
-    sender.mx_router = MagicMock()
-    sender.mx_router.classify.return_value = MXResult("OTHER", ["mx.test"], False)
     deliver_mock = MagicMock()
     monkeypatch.setattr(sender, "_send_via_channel", deliver_mock)
     monkeypatch.setattr(
@@ -474,6 +472,8 @@ def test_email_sender_deliver_success(monkeypatch: pytest.MonkeyPatch) -> None:
     assert params["status"] == "sent"
     assert isinstance(params["sent_at"], datetime)
     assert params["last_error"] is None
+    metadata = json.loads(params["metadata"])
+    assert metadata["route"]["provider"] == "yandex"
 
     monkeypatch.delenv("EMAIL_SENDING_ENABLED", raising=False)
     reset_settings_cache()
@@ -485,8 +485,6 @@ def test_email_sender_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setenv("EMAIL_SENDING_ENABLED", "false")
     sender = EmailSender(session_factory=lambda: session, use_starttls=False)  # type: ignore[arg-type]
-    sender.mx_router = MagicMock()
-    sender.mx_router.classify.return_value = MXResult("OTHER", ["mx.test"], False)
     deliver_mock = MagicMock()
     monkeypatch.setattr(sender, "_send_via_channel", deliver_mock)
     monkeypatch.setattr(sender, "_is_within_send_window", lambda *_: True)

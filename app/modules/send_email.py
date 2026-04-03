@@ -10,17 +10,15 @@ import ssl
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta, timezone
 from email.message import EmailMessage
-from email.utils import formataddr, make_msgid, parseaddr
+from email.utils import formataddr, make_msgid
 from typing import Dict, Optional
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session, sessionmaker
-
 from zoneinfo import ZoneInfo
 
 from app.config import SMTPChannelSettings, get_settings
 from app.modules.generate_email_gpt import EmailTemplate
-from app.modules.mx_router import MXResult, MXRouter
 from app.modules.utils.db import get_session_factory, session_scope
 from app.modules.utils.email import clean_email, is_valid_email
 
@@ -91,13 +89,8 @@ MAX_SEND_DELAY_SECONDS = 16 * 60
 
 @dataclass
 class RouteContext:
-    """Содержит информацию о выбранном канале отправки."""
-
     provider: str
     channel: SMTPChannelSettings
-    mx_result: MXResult
-    reply_to: Optional[str]
-    fallback: bool = False
 
 
 def _mask_email(value: str) -> str:
@@ -113,24 +106,19 @@ def _mask_email(value: str) -> str:
 
 
 class EmailSender:
-    """Отвечает за доставку писем и фиксацию статусов в БД."""
+    """Отвечает за Gmail-доставку писем и фиксацию статусов в БД."""
 
     def __init__(
         self,
         *,
         session_factory: Optional[sessionmaker[Session]] = None,
         smtp_settings: Optional[SMTPChannelSettings] = None,
-        mx_router: Optional[MXRouter] = None,
         use_starttls: bool = True,
         timeout: float = 30.0,
     ) -> None:
         settings = get_settings()
-        self.gmail_settings = settings.smtp_gmail
         self.yandex_settings = settings.smtp_yandex
-        self.routing_settings = settings.routing
-        self.default_channel = smtp_settings or self.gmail_settings
-        self.mx_router = mx_router or MXRouter(self.routing_settings)
-        self.gmail_from_header = self._build_from_header(self.gmail_settings)
+        self.default_channel = smtp_settings or self.yandex_settings
         self.session_factory = session_factory or get_session_factory()
         self.use_starttls = use_starttls
         self.timeout = timeout
@@ -139,17 +127,11 @@ class EmailSender:
         self.sending_enabled = getattr(settings, "email_sending_enabled", True)
 
     def _build_from_header(self, channel: SMTPChannelSettings) -> str:
-        """Формирует заголовок From с учётом имени отправителя."""
         raw_sender = (channel.sender or "").strip()
         sender_name = (channel.sender_name or "").strip() if channel.sender_name else ""
 
         if sender_name and raw_sender:
             return formataddr((sender_name, raw_sender))
-
-        name_from_value, email_from_value = parseaddr(raw_sender)
-        if name_from_value and email_from_value:
-            return formataddr((name_from_value, email_from_value))
-
         if raw_sender:
             return raw_sender
 
@@ -169,7 +151,7 @@ class EmailSender:
         scheduled_for: Optional[datetime] = None,
         session: Optional[Session] = None,
     ) -> str:
-        """Сохраняет письмо в очереди с пометкой scheduled."""
+        """Сохраняет письмо в очереди со статусом scheduled."""
         if session is not None:
             return self._queue_with_session(
                 session,
@@ -281,7 +263,7 @@ class EmailSender:
         normalized_email = clean_email(to_email)
         if not is_valid_email(normalized_email):
             LOGGER.warning(
-                "Outreach %s пропущен — email '%s' не проходит валидацию.",
+                "Outreach %s пропущен: email '%s' не проходит валидацию.",
                 outreach_id,
                 to_email,
             )
@@ -316,28 +298,21 @@ class EmailSender:
         msg["To"] = normalized_email
         msg.set_content(body)
 
-        route = self._prepare_route(normalized_email)
+        route = self._prepare_route()
         message_id = self._make_message_id(route.channel)
         msg["Message-ID"] = message_id
-        self._apply_headers(msg, route.channel, reply_to=route.reply_to)
-        checked_at = datetime.now(timezone.utc)
+        self._apply_headers(msg, route.channel)
 
         metadata: Dict[str, object] = {
             "message_id": message_id,
             "recipient": normalized_email,
-            "mx": {
-                "class": route.mx_result.classification,
-                "records": route.mx_result.records,
-                "checked_at": checked_at.isoformat(),
-            },
             "route": {
                 "provider": route.provider,
-                "fallback": route.fallback,
             },
         }
 
         try:
-            route = self._deliver_with_fallback(normalized_email, msg, route, metadata)
+            self._send_via_channel(normalized_email, msg, route.channel)
             self._update_status(
                 session,
                 outreach_id,
@@ -347,10 +322,9 @@ class EmailSender:
                 metadata=metadata,
             )
             LOGGER.info(
-                "Письмо %s отправлено через %s (mx=%s).",
+                "Письмо %s отправлено через %s.",
                 _mask_email(normalized_email),
                 metadata["route"]["provider"],
-                route.mx_result.classification,
             )
             return "sent"
         except smtplib.SMTPAuthenticationError as exc:
@@ -365,7 +339,7 @@ class EmailSender:
                 metadata=metadata,
             )
             return "failed"
-        except smtplib.SMTPException as exc:  # noqa: PERF203
+        except smtplib.SMTPException as exc:
             metadata["route"]["error"] = str(exc)
             self._update_status(
                 session,
@@ -378,97 +352,14 @@ class EmailSender:
             LOGGER.error("Ошибка отправки письма (%s): %s", _mask_email(normalized_email), exc)
             return "failed"
 
-    def _prepare_route(self, to_email: str) -> RouteContext:
-        domain = self._extract_domain(to_email)
-        mx_result = self.mx_router.classify(domain) if domain else MXResult("UNKNOWN", [], False)
-        provider = "yandex" if mx_result.classification == "RU" else "gmail"
-        channel = self.yandex_settings if provider == "yandex" else self.gmail_settings
-        reply_to: Optional[str] = None
-        fallback = False
+    def _prepare_route(self) -> RouteContext:
+        channel = self.yandex_settings if self._channel_configured(self.yandex_settings) else self.default_channel
+        return RouteContext(provider="yandex", channel=channel)
 
-        if provider == "yandex" and not self._channel_configured(channel):
-            LOGGER.warning(
-                "Выбран Яндекс SMTP для %s, но конфигурация неполная. Фолбэк на Gmail.",
-                domain or _mask_email(to_email),
-            )
-            provider = "gmail"
-            channel = self.gmail_settings
-            reply_to = None
-            fallback = True
-
-        if provider == "gmail" and not self._channel_configured(channel):
-            channel = self.default_channel
-
-        return RouteContext(
-            provider=provider,
-            channel=channel,
-            mx_result=mx_result,
-            reply_to=reply_to,
-            fallback=fallback,
-        )
-
-    def _apply_headers(self, message: EmailMessage, channel: SMTPChannelSettings, *, reply_to: Optional[str]) -> None:
+    def _apply_headers(self, message: EmailMessage, channel: SMTPChannelSettings) -> None:
         if "From" in message:
             del message["From"]
-        if "Reply-To" in message:
-            del message["Reply-To"]
         message["From"] = self._build_from_header(channel)
-        if reply_to:
-            message["Reply-To"] = reply_to
-
-    def _deliver_with_fallback(
-        self,
-        to_email: str,
-        message: EmailMessage,
-        route: RouteContext,
-        metadata: Dict[str, object],
-    ) -> RouteContext:
-        try:
-            self._send_via_channel(to_email, message, route.channel)
-            return route
-        except smtplib.SMTPAuthenticationError:
-            raise
-        except smtplib.SMTPException as exc:
-            if self._should_fallback_to_gmail(route, exc):
-                error_text = self._extract_smtp_error_text(exc)
-                metadata["route"]["error"] = error_text
-                fallback_route = self._build_gmail_route(route.mx_result)
-                LOGGER.warning(
-                    "Яндекс отклонил письмо %s как спам (%s). Переключаемся на Gmail.",
-                    _mask_email(to_email),
-                    error_text,
-                )
-                self._apply_headers(message, fallback_route.channel, reply_to=fallback_route.reply_to)
-                try:
-                    self._send_via_channel(to_email, message, fallback_route.channel)
-                except smtplib.SMTPException as fallback_exc:
-                    fallback_error = self._extract_smtp_error_text(fallback_exc)
-                    metadata["route"]["error"] = f"{error_text} | fallback_failed: {fallback_error}"
-                    raise
-                else:
-                    metadata["route"]["provider"] = fallback_route.provider
-                    metadata["route"]["fallback"] = True
-                    return fallback_route
-            metadata["route"]["error"] = self._extract_smtp_error_text(exc)
-            raise
-
-    def _should_fallback_to_gmail(self, route: RouteContext, error: Exception) -> bool:
-        if route.provider != "yandex" or route.fallback:
-            return False
-        if not self._channel_configured(self.gmail_settings):
-            return False
-        error_text = self._extract_smtp_error_text(error).lower()
-        if not error_text:
-            return False
-        spam_tokens = (
-            "5.7.1",
-            "5.7.0",
-            "suspected spam",
-            "suspicion of spam",
-            "message rejected",
-            "under suspicion of spam",
-        )
-        return any(token in error_text for token in spam_tokens)
 
     @staticmethod
     def _extract_smtp_error_text(error: Exception) -> str:
@@ -479,25 +370,9 @@ class EmailSender:
             return str(raw)
         return str(error)
 
-    def _build_gmail_route(self, mx_result: MXResult) -> RouteContext:
-        return RouteContext(
-            provider="gmail",
-            channel=self.gmail_settings,
-            mx_result=mx_result,
-            reply_to=None,
-            fallback=True,
-        )
-
     @staticmethod
     def _channel_configured(channel: SMTPChannelSettings) -> bool:
         return bool(channel.host and channel.port)
-
-    @staticmethod
-    def _extract_domain(email: str) -> Optional[str]:
-        _, parsed = parseaddr(email)
-        if "@" not in parsed:
-            return None
-        return parsed.split("@", 1)[1].lower()
 
     def _send_via_channel(self, to_email: str, message: EmailMessage, channel: SMTPChannelSettings) -> None:
         if not channel.host:
@@ -644,25 +519,15 @@ class EmailSender:
         elif anchor_local > window_end:
             next_day = anchor_local.date() + timedelta(days=1)
             base = datetime.combine(next_day, SEND_WINDOW_START, tzinfo=self._tz)
-            window_end = datetime.combine(next_day, SEND_WINDOW_END, tzinfo=self._tz)
         else:
             base = anchor_local
 
         candidate = base + timedelta(seconds=delay_seconds)
-        if candidate > window_end:
-            next_day = base.date() + timedelta(days=1)
-            base = datetime.combine(next_day, SEND_WINDOW_START, tzinfo=self._tz)
-            window_end = datetime.combine(next_day, SEND_WINDOW_END, tzinfo=self._tz)
-            candidate = base + timedelta(seconds=random.randint(MIN_SEND_DELAY_SECONDS, MAX_SEND_DELAY_SECONDS))
-
+        if candidate.time() > SEND_WINDOW_END:
+            next_day = candidate.date() + timedelta(days=1)
+            candidate = datetime.combine(next_day, SEND_WINDOW_START, tzinfo=self._tz)
         return candidate
 
     def _is_within_send_window(self, local_dt: datetime) -> bool:
-        start = datetime.combine(local_dt.date(), SEND_WINDOW_START, tzinfo=self._tz)
-        end = datetime.combine(local_dt.date(), SEND_WINDOW_END, tzinfo=self._tz)
-        return start <= local_dt <= end
-
-    def is_within_send_window(self, *, reference: Optional[datetime] = None) -> bool:
-        base = reference or datetime.now(timezone.utc)
-        local_dt = base.astimezone(self._tz)
-        return self._is_within_send_window(local_dt)
+        current = local_dt.timetz().replace(tzinfo=None)
+        return SEND_WINDOW_START <= current <= SEND_WINDOW_END

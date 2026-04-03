@@ -13,7 +13,7 @@
 ## Требования
 
 - Docker 24.0+ и docker compose plugin
-- Возможность открыть исходящие соединения на `smtp.gmail.com:587` и/или `smtp.yandex.ru:465`
+- Возможность открыть исходящие соединения на `smtp.gmail.com:587`
 - Доступ к Yandex Search API и Google Sheets
 - Для Playwright fallback в Docker браузер Chromium устанавливается автоматически на этапе сборки образа
 
@@ -283,12 +283,8 @@ docker compose run --rm app --mode once
 
 ### Email и OpenAI
 
-- `ROUTING_ENABLED`, `ROUTING_MX_CACHE_TTL_HOURS`, `ROUTING_DNS_TIMEOUT_MS`, `ROUTING_DNS_RESOLVERS`, `ROUTING_RU_MX_PATTERNS`, `ROUTING_RU_MX_TLDS`, `ROUTING_FORCE_RU_DOMAINS` — параметры MX-маршрутизации (см. `docs/requirements-RU-Yandex-otherwise-Gmail.md`). Список паттернов можно пересобрать скриптом:
-  ```bash
-  docker compose run --rm app python scripts/discover_ru_mx.py
-  ```
-- `GMAIL_SMTP_HOST`, `GMAIL_SMTP_PORT`, `GMAIL_SMTP_TLS`, `GMAIL_USER`, `GMAIL_PASS`, `GMAIL_FROM` — отправка через Gmail (App Password из Google Account → Security → App Passwords).
-- `YANDEX_SMTP_HOST`, `YANDEX_SMTP_PORT`, `YANDEX_SMTP_SSL`, `YANDEX_USER`, `YANDEX_PASS`, `YANDEX_FROM` — отправка через личный аккаунт Яндекс (пароль приложения в mail.yandex.ru → Настройки → Пароли приложений). Если канал не используется, оставьте значения пустыми.
+- `YANDEX_SMTP_HOST`, `YANDEX_SMTP_PORT`, `YANDEX_SMTP_SSL`, `YANDEX_USER`, `YANDEX_PASS`, `YANDEX_FROM` — отправка через Яндекс SMTP (пароль приложения в Яндекс Почте → Настройки → Пароли приложений).
+- Для доставки писем используется только Яндекс SMTP; настройки Gmail SMTP и MX-маршрутизация больше не требуются.
 - `EMAIL_GENERATION_ENABLED` — если `false`, оркестратор не будет генерировать и ставить письма в `outreach_messages`.
 - `EMAIL_SENDING_ENABLED` — если `false`, письма могут сохраняться в `outreach_messages` со статусом `scheduled`, но реальная отправка отключена.
 - `OPENAI_API_KEY` — ключ OpenAI для генерации персонализированных писем.

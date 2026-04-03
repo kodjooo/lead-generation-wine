@@ -86,6 +86,9 @@ def test_worker_enrichment_queue_prioritizes_only_new_companies() -> None:
 def test_outreach_queue_skips_llm_excluded_and_opt_out_companies() -> None:
     assert "c.status <> 'excluded_by_llm'" in SELECT_CONTACTS_FOR_OUTREACH_SQL
     assert "COALESCE(c.opt_out, FALSE) = FALSE" in SELECT_CONTACTS_FOR_OUTREACH_SQL
+    assert "AND c.attributes ->> 'homepage_excerpt' IS NOT NULL" not in SELECT_CONTACTS_FOR_OUTREACH_SQL
+    assert "AND c.attributes ->> 'homepage_excerpt' <> ''" not in SELECT_CONTACTS_FOR_OUTREACH_SQL
+    assert "FROM opt_out_registry" not in SELECT_CONTACTS_FOR_OUTREACH_SQL
 
 
 def test_cleanup_llm_company_patch_marks_company_as_excluded() -> None:
