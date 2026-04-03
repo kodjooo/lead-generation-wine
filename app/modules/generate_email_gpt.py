@@ -17,8 +17,16 @@ LOGGER = logging.getLogger("app.generate_email")
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 EMAIL_GENERATION_GATEWAY_PATH = "/v1/openai/responses"
 PROMPTS_DIR = Path(__file__).resolve().parents[1] / "prompts"
-EMAIL_SYSTEM_PROMPT_PATH = PROMPTS_DIR / "email_generation_system_prompt.txt"
-EMAIL_USER_PROMPT_PATH = PROMPTS_DIR / "email_generation_user_prompt.txt"
+PROMPT_PATHS = {
+    "mall": {
+        "system": PROMPTS_DIR / "email_generation_mall_system_prompt.txt",
+        "user": PROMPTS_DIR / "email_generation_mall_user_prompt.txt",
+    },
+    "real_estate_agency": {
+        "system": PROMPTS_DIR / "email_generation_agency_system_prompt.txt",
+        "user": PROMPTS_DIR / "email_generation_agency_user_prompt.txt",
+    },
+}
 
 
 def _extract_responses_output_text(payload: Dict[str, object]) -> Optional[str]:
@@ -114,8 +122,7 @@ class EmailGenerator:
         self.language = language
         self.temperature = temperature
         self.timeout = timeout
-        self._system_prompt_template = self._load_prompt_template(EMAIL_SYSTEM_PROMPT_PATH)
-        self._user_prompt_template = self._load_prompt_template(EMAIL_USER_PROMPT_PATH)
+        self._prompt_templates = self._load_prompt_templates()
 
     def generate(
         self,
@@ -151,28 +158,7 @@ class EmailGenerator:
         offer: OfferBrief,
         contact: Optional[ContactBrief],
     ) -> Dict[str, object]:
-        homepage_excerpt = " ".join(company.highlights) if company.highlights else None
-        segment_name = self._segment_name(company.entity_type)
-        sender_profile = self._sender_profile(company.entity_type)
-        outreach_goal = self._outreach_goal(company.entity_type)
-        user_payload = {
-            "company": {
-                "entity_type": company.entity_type,
-                "segment_name": segment_name,
-                "homepage_excerpt": homepage_excerpt,
-            },
-            "sender": sender_profile,
-            "goal": outreach_goal,
-            "offer": {
-                "pains": offer.pains,
-                "value_proposition": offer.value_proposition,
-                "call_to_action": offer.call_to_action,
-            },
-            "guidelines": {
-                "language": self.language,
-                "avoid_marketing": True,
-            },
-        }
+        prompt_key = self._prompt_key(company.entity_type)
         payload = {
             "model": self.model,
             "reasoning": {"effort": self.settings.email_generation_llm_reasoning_effort},
@@ -183,7 +169,7 @@ class EmailGenerator:
                     "content": [
                         {
                             "type": "input_text",
-                            "text": self._system_prompt_text(),
+                            "text": self._system_prompt_text(prompt_key),
                         }
                     ],
                 },
@@ -192,7 +178,7 @@ class EmailGenerator:
                     "content": [
                         {
                             "type": "input_text",
-                            "text": self._user_prompt_text(user_payload),
+                            "text": self._user_prompt_text(prompt_key),
                         }
                     ],
                 },
@@ -251,18 +237,25 @@ class EmailGenerator:
             LOGGER.error("Не удалось интерпретировать ответ LLM: %s", response)
             return None
 
-    @staticmethod
-    def _load_prompt_template(path: Path) -> Template:
-        return Template(path.read_text(encoding="utf-8").strip())
+    def _load_prompt_templates(self) -> Dict[str, Dict[str, Template]]:
+        templates: Dict[str, Dict[str, Template]] = {}
+        for key, paths in PROMPT_PATHS.items():
+            templates[key] = {
+                "system": Template(paths["system"].read_text(encoding="utf-8").strip()),
+                "user": Template(paths["user"].read_text(encoding="utf-8").strip()),
+            }
+        return templates
 
-    def _system_prompt_text(self) -> str:
-        return self._system_prompt_template.substitute(language=self.language)
+    def _prompt_key(self, entity_type: Optional[str]) -> str:
+        if entity_type == "real_estate_agency":
+            return "real_estate_agency"
+        return "mall"
 
-    def _user_prompt_text(self, user_payload: Dict[str, object]) -> str:
-        return self._user_prompt_template.substitute(
-            language=self.language,
-            user_payload_json=json.dumps(user_payload, ensure_ascii=False, indent=2),
-        )
+    def _system_prompt_text(self, prompt_key: str) -> str:
+        return self._prompt_templates[prompt_key]["system"].substitute(language=self.language)
+
+    def _user_prompt_text(self, prompt_key: str) -> str:
+        return self._prompt_templates[prompt_key]["user"].substitute(language=self.language)
 
     def _fallback_template(
         self,

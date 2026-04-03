@@ -147,7 +147,7 @@ def test_email_generator_calls_openai(monkeypatch: pytest.MonkeyPatch) -> None:
     assert generated.used_fallback is False
     payload_text = generated.request_payload["input"][0]["content"][0]["text"]
     assert "крупной розничной сети по продаже алкогольной продукции" in payload_text
-    assert "получить в ответ коммерческое предложение" in payload_text
+    assert "агентству недвижимости" in payload_text
 
     reset_settings_cache()
 
@@ -236,11 +236,24 @@ def test_email_generator_renders_user_prompt_template(monkeypatch: pytest.Monkey
     company = CompanyBrief(name="Alpha", domain="alpha.ru", entity_type="real_estate_agency")
     offer = OfferBrief(value_proposition="test")
 
-    payload = generator._build_payload(company, offer, None)
-    user_prompt_text = payload["input"][1]["content"][0]["text"]
+    agency_payload = generator._build_payload(company, offer, None)
+    agency_system_prompt = agency_payload["input"][0]["content"][0]["text"]
+    agency_user_prompt = agency_payload["input"][1]["content"][0]["text"]
 
-    assert "Контекст:" in user_prompt_text
-    assert "\"entity_type\": \"real_estate_agency\"" in user_prompt_text
+    mall_payload = generator._build_payload(
+        CompanyBrief(name="Mall", domain="mall.ru", entity_type="mall"),
+        offer,
+        None,
+    )
+    mall_system_prompt = mall_payload["input"][0]["content"][0]["text"]
+    mall_user_prompt = mall_payload["input"][1]["content"][0]["text"]
+
+    assert "агентства недвижимости" in agency_user_prompt
+    assert "подборку релевантных объектов" in agency_user_prompt
+    assert "агентству недвижимости" in agency_system_prompt
+    assert "торгового центра" in mall_user_prompt
+    assert "размещение в торговом центре" in mall_user_prompt
+    assert "торговому центру" in mall_system_prompt
 
     reset_settings_cache()
 
