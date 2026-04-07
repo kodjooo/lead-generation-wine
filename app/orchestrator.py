@@ -16,7 +16,13 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.modules.deduplicate import DeduplicationService
 from app.modules.enrich_contacts import ContactEnricher
-from app.modules.generate_email_gpt import CompanyBrief, ContactBrief, EmailGenerator, OfferBrief
+from app.modules.generate_email_gpt import (
+    CompanyBrief,
+    ContactBrief,
+    EmailGenerationError,
+    EmailGenerator,
+    OfferBrief,
+)
 from app.modules.send_email import EmailSender
 from app.modules.serp_ingest import SerpIngestService
 from app.modules.utils.db import get_session_factory, session_scope
@@ -510,11 +516,20 @@ class PipelineOrchestrator:
                     highlights=[row["homepage_excerpt"]] if row["homepage_excerpt"] else [],
                 )
                 contact = ContactBrief(emails=[row["value"]])
-                generated = self.email_generator.generate(
-                    company,
-                    self._build_offer(company.entity_type),
-                    contact,
-                )
+                try:
+                    generated = self.email_generator.generate(
+                        company,
+                        self._build_offer(company.entity_type),
+                        contact,
+                    )
+                except EmailGenerationError as exc:
+                    LOGGER.error(
+                        "Не удалось сгенерировать письмо для company_id=%s contact_id=%s: %s",
+                        row["company_id"],
+                        row["contact_id"],
+                        exc,
+                    )
+                    continue
                 self.email_sender.queue(
                     company_id=row["company_id"],
                     contact_id=row["contact_id"],

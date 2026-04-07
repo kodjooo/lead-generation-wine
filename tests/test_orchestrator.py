@@ -9,6 +9,7 @@ from unittest.mock import Mock
 from zoneinfo import ZoneInfo
 
 from app.modules.yandex_deferred import YandexAPIError
+from app.modules.generate_email_gpt import EmailGenerationError
 from app.orchestrator import (
     PipelineOrchestrator,
     SELECT_COMPANIES_WITHOUT_CONTACTS_SQL,
@@ -76,6 +77,51 @@ def test_run_worker_cycle_runs_enrichment_and_email_generation() -> None:
     orchestrator._generate_and_send_emails = Mock(return_value=(2, 1))
 
     assert orchestrator.run_worker_cycle() == (3, 2, 1)
+
+
+def test_queue_emails_skips_contacts_when_generation_fails(monkeypatch) -> None:
+    class _FakeMappingsResultWithRows:
+        def __init__(self, rows):
+            self._rows = rows
+
+        def mappings(self):
+            return iter(self._rows)
+
+    class _QueueSession:
+        def execute(self, sql, params=None):
+            sql_text = str(sql)
+            if "FROM locked_contacts" in sql_text:
+                return _FakeMappingsResultWithRows(
+                    [
+                        {
+                            "contact_id": "contact-1",
+                            "company_id": "company-1",
+                            "value": "hello@example.com",
+                            "canonical_domain": "example.com",
+                            "industry": "mall",
+                            "homepage_excerpt": "торговый центр",
+                        }
+                    ]
+                )
+            return _FakeMappingsResultWithRows([])
+
+    orchestrator = PipelineOrchestrator.__new__(PipelineOrchestrator)
+    orchestrator.email_generation_enabled = True
+    orchestrator.config = SimpleNamespace(batch_size=5)
+    orchestrator.session_factory = object()
+    orchestrator.email_generator = SimpleNamespace(
+        generate=Mock(side_effect=EmailGenerationError("llm unavailable"))
+    )
+    orchestrator.email_sender = SimpleNamespace(queue=Mock())
+
+    @contextmanager
+    def fake_scope(_):
+        yield _QueueSession()
+
+    monkeypatch.setattr("app.orchestrator.session_scope", fake_scope)
+
+    assert orchestrator._queue_emails() == 0
+    orchestrator.email_sender.queue.assert_not_called()
 
 
 def test_worker_enrichment_queue_prioritizes_only_new_companies() -> None:

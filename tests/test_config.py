@@ -21,6 +21,7 @@ def test_settings_loaded_from_env(monkeypatch) -> None:
     monkeypatch.setenv("EMAIL_GENERATION_LLM_PROVIDER", "gateway")
     monkeypatch.setenv("EMAIL_GENERATION_LLM_MODEL", "gpt-5")
     monkeypatch.setenv("EMAIL_GENERATION_LLM_REASONING_EFFORT", "low")
+    monkeypatch.setenv("EMAIL_GENERATION_LLM_TIMEOUT_SECONDS", "60")
     monkeypatch.setenv("EMAIL_GENERATION_LLM_GATEWAY_URL", "https://llm-gateway.example.com")
     monkeypatch.setenv("EMAIL_GENERATION_LLM_GATEWAY_API_KEY", "email-gateway-secret")
     monkeypatch.setenv("SITE_CLASSIFICATION_LLM_ENABLED", "true")
@@ -84,6 +85,7 @@ def test_settings_loaded_from_env(monkeypatch) -> None:
     assert settings.email_generation_llm_provider == "gateway"
     assert settings.email_generation_llm_model == "gpt-5"
     assert settings.email_generation_llm_reasoning_effort == "low"
+    assert settings.email_generation_llm_timeout_seconds == 60.0
     assert settings.email_generation_llm_gateway_url == "https://llm-gateway.example.com"
     assert settings.email_generation_llm_gateway_api_key == "email-gateway-secret"
     assert settings.site_classification_llm_enabled is True

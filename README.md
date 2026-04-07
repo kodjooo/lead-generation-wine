@@ -287,6 +287,7 @@ docker compose run --rm app --mode once
 - Для доставки писем используется только Яндекс SMTP; настройки Gmail SMTP и MX-маршрутизация больше не требуются.
 - `EMAIL_GENERATION_ENABLED` — если `false`, оркестратор не будет генерировать и ставить письма в `outreach_messages`.
 - `EMAIL_SENDING_ENABLED` — если `false`, письма могут сохраняться в `outreach_messages` со статусом `scheduled`, но реальная отправка отключена.
+- `EMAIL_GENERATION_LLM_TIMEOUT_SECONDS` — таймаут одного LLM-запроса на генерацию письма. Для `EMAIL_GENERATION_LLM_PROVIDER=gateway` держите не ниже 60 секунд, иначе запросы к `gpt-5` могут уходить в timeout.
 - `OPENAI_API_KEY` — ключ OpenAI для генерации персонализированных писем.
 - `SITE_CLASSIFICATION_LLM_ENABLED` — включает OpenAI fallback для спорных кандидатов после homepage-проверки.
 - `SITE_CLASSIFICATION_LLM_MODEL` — модель OpenAI для fallback-классификации типа сайта и фактического города.

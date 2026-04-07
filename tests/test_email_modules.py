@@ -2,6 +2,7 @@
 
 import json
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Tuple
 from unittest.mock import MagicMock
 
@@ -10,7 +11,12 @@ import pytest
 import respx
 
 from app.config import get_settings
-from app.modules.generate_email_gpt import CompanyBrief, EmailGenerator, OfferBrief
+from app.modules.generate_email_gpt import (
+    CompanyBrief,
+    EmailGenerationError,
+    EmailGenerator,
+    OfferBrief,
+)
 from app.modules.send_email import EmailSender
 
 
@@ -93,7 +99,7 @@ def reset_settings_cache() -> None:
     get_settings.cache_clear()  # type: ignore[attr-defined]
 
 
-def test_email_generator_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_email_generator_raises_when_llm_is_not_configured(monkeypatch: pytest.MonkeyPatch) -> None:
     reset_settings_cache()
     monkeypatch.setenv("EMAIL_GENERATION_LLM_PROVIDER", "openai")
     monkeypatch.setenv("OPENAI_API_KEY", "")
@@ -107,13 +113,14 @@ def test_email_generator_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
         value_proposition="Рассматриваем размещение магазина в торговом центре",
     )
 
-    generated = generator.generate(company, offer)
+    with pytest.raises(EmailGenerationError, match="not configured"):
+        generator.generate(company, offer)
 
-    assert generated.used_fallback is True
-    assert generated.request_payload is None
+    reset_settings_cache()
+    return
+
     assert "розничную сеть по продаже алкогольной продукции" in generated.template.body
     assert "подходящие площади для размещения" in generated.template.body
-    assert generated.request_payload is None
 
     reset_settings_cache()
 
@@ -143,7 +150,6 @@ def test_email_generator_calls_openai(monkeypatch: pytest.MonkeyPatch) -> None:
     assert generated.template.subject == "Тема"
     assert generated.template.body == "Текст"
     assert generated.request_payload is not None
-    assert generated.used_fallback is False
     payload_text = generated.request_payload["input"][0]["content"][0]["text"]
     assert "крупной розничной сети по продаже алкогольной продукции" in payload_text
     assert "агентству недвижимости" in payload_text
@@ -177,7 +183,6 @@ def test_email_generator_uses_gateway_provider(monkeypatch: pytest.MonkeyPatch) 
 
     generated = generator.generate(company, offer)
 
-    assert generated.used_fallback is False
     assert generated.template.subject == "Тема gateway"
     assert generated.template.body == "Текст gateway"
     assert route.called is True
@@ -507,8 +512,5 @@ def test_email_sender_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def generator_template():
-    company = CompanyBrief(name="Test", domain="test.ru")
-    offer = OfferBrief(value_proposition="Automation")
-    generator = EmailGenerator()
-    return generator._fallback_template(company, offer, None)
+    return SimpleNamespace(subject="Тема", body="Текст")
 

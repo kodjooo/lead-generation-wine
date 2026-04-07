@@ -126,6 +126,15 @@ class EmailSender:
         self._tz = ZoneInfo(self.timezone_name)
         self.sending_enabled = getattr(settings, "email_sending_enabled", True)
 
+    def is_within_send_window(self, now: Optional[datetime] = None) -> bool:
+        """Возвращает, можно ли отправлять письма в текущий момент."""
+        current_local = now or datetime.now(timezone.utc).astimezone(self._tz)
+        if current_local.tzinfo is None:
+            current_local = current_local.replace(tzinfo=self._tz)
+        else:
+            current_local = current_local.astimezone(self._tz)
+        return self._is_within_send_window(current_local)
+
     def _build_from_header(self, channel: SMTPChannelSettings) -> str:
         raw_sender = (channel.sender or "").strip()
         sender_name = (channel.sender_name or "").strip() if channel.sender_name else ""

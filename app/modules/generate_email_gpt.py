@@ -103,7 +103,10 @@ class GeneratedEmail:
 
     template: EmailTemplate
     request_payload: Optional[Dict[str, object]] = None
-    used_fallback: bool = False
+
+
+class EmailGenerationError(RuntimeError):
+    """Ошибка генерации письма через LLM."""
 
 
 class EmailGenerator:
@@ -115,13 +118,13 @@ class EmailGenerator:
         model: str | None = None,
         language: str = "ru",
         temperature: float = 0.4,
-        timeout: float = 15.0,
+        timeout: float | None = None,
     ) -> None:
         self.settings = get_settings()
         self.model = model or self.settings.email_generation_llm_model
         self.language = language
         self.temperature = temperature
-        self.timeout = timeout
+        self.timeout = timeout or self.settings.email_generation_llm_timeout_seconds
         self._prompt_templates = self._load_prompt_templates()
 
     def generate(
@@ -136,21 +139,18 @@ class EmailGenerator:
             LOGGER.warning(
                 "LLM для генерации писем не настроен, используется fallback-шаблон."
             )
-            template = self._fallback_template(company, offer, contact)
-            return GeneratedEmail(template=template, request_payload=None, used_fallback=True)
+            raise EmailGenerationError("EMAIL_GENERATION_LLM is not configured")
 
         try:
             payload = self._build_payload(company, offer, contact)
             response = self._request_openai(payload)
             parsed = self._parse_openai_response(response)
             if parsed:
-                return GeneratedEmail(template=parsed, request_payload=payload, used_fallback=False)
-            template = self._fallback_template(company, offer, contact)
-            return GeneratedEmail(template=template, request_payload=payload, used_fallback=True)
+                return GeneratedEmail(template=parsed, request_payload=payload)
+            raise EmailGenerationError("LLM returned empty or invalid email payload")
         except httpx.HTTPError as exc:  # noqa: PERF203
             LOGGER.error("Ошибка обращения к OpenAI: %s", exc)
-            template = self._fallback_template(company, offer, contact)
-            return GeneratedEmail(template=template, request_payload=payload, used_fallback=True)
+            raise EmailGenerationError(f"LLM request failed: {exc}") from exc
 
     def _build_payload(
         self,

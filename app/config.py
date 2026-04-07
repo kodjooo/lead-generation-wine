@@ -154,6 +154,7 @@ class Settings:
     email_generation_llm_provider: str
     email_generation_llm_model: str
     email_generation_llm_reasoning_effort: str
+    email_generation_llm_timeout_seconds: float
     email_generation_llm_gateway_url: str | None
     email_generation_llm_gateway_api_key: str | None
     site_classification_llm_enabled: bool
@@ -321,6 +322,9 @@ def get_settings() -> Settings:
         email_generation_llm_provider=email_generation_llm_provider,
         email_generation_llm_model=_env("EMAIL_GENERATION_LLM_MODEL", "gpt-5"),
         email_generation_llm_reasoning_effort=email_generation_llm_reasoning_effort,
+        email_generation_llm_timeout_seconds=float(
+            _env("EMAIL_GENERATION_LLM_TIMEOUT_SECONDS", "60")
+        ),
         email_generation_llm_gateway_url=_env("EMAIL_GENERATION_LLM_GATEWAY_URL") or None,
         email_generation_llm_gateway_api_key=_env("EMAIL_GENERATION_LLM_GATEWAY_API_KEY") or None,
         site_classification_llm_enabled=_env_bool("SITE_CLASSIFICATION_LLM_ENABLED", False),
